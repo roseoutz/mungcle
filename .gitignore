@@ -29,6 +29,7 @@ Thumbs.db
 
 # AI tools state
 .omc/
+.claude/settings.local.json
 
 # Prisma
 prisma/*.db
