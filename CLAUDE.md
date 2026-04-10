@@ -16,7 +16,7 @@
 
 | 문서 | 내용 | 언제 읽나 |
 |------|------|----------|
-| `conventions-backend.md` | NestJS+Prisma 코딩 규칙 | 백엔드 코드 작성 시 |
+| `conventions-backend.md` | Kotlin+Spring Boot+JPA+gRPC 코딩 규칙 | 백엔드 코드 작성 시 |
 | `conventions-frontend.md` | Expo/RN 코딩 규칙 | 프론트엔드 코드 작성 시 |
 | `workflow.md` | 작업 흐름, gstack+OMC 연동 | 작업 시작 시 |
 | `testing.md` | 테스트 전략, 프레임워크 | 테스트 작성 시 |
@@ -35,16 +35,19 @@
 
 | 파일 | 적용 대상 |
 |------|----------|
-| `backend.md` | `backend/**/*.ts` |
+| `backend.md` | `services/**/*.kt`, `common/**/*.kt` |
 | `frontend.md` | `frontend/**/*.tsx`, `frontend/**/*.ts` |
-| `prisma.md` | `**/*.prisma`, `**/prisma/**` |
+| `prisma.md` | `**/db/migration/**`, `**/persistence/**/*.kt`, `**/*.sql` |
 | `tests.md` | `**/*.spec.ts`, `**/*.test.ts`, `**/*.test.tsx` |
 
 ## 기술 스택
 
-Expo (React Native) + NestJS + Prisma + Supabase (DB+Storage) + FCM
+**MSA 6개 서비스:** Kotlin + Spring Boot 3.5 + JPA + gRPC + Kafka
+**프론트엔드:** Expo (React Native)
+**인프라:** Supabase (PostgreSQL + Storage) + FCM + Docker Compose
+**관측성:** OpenTelemetry + Grafana + Tempo + Prometheus
 
-상세: `plan-docs/eng-review.md`
+상세: `plan-docs/eng-review.md`, `ai/decisions.md` (ADR-010~022)
 
 ## 코드 규칙
 
