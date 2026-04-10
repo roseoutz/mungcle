@@ -12,19 +12,19 @@ spring:
 grpc:
   client:
     identity:
-      address: static://localhost:50051
+      address: static://${IDENTITY_HOST:localhost}:50051
       negotiation-type: plaintext
     pet-profile:
-      address: static://localhost:50052
+      address: static://${PET_PROFILE_HOST:localhost}:50052
       negotiation-type: plaintext
     walks:
-      address: static://localhost:50053
+      address: static://${WALKS_HOST:localhost}:50053
       negotiation-type: plaintext
     social:
-      address: static://localhost:50054
+      address: static://${SOCIAL_HOST:localhost}:50054
       negotiation-type: plaintext
     notification:
-      address: static://localhost:50055
+      address: static://${NOTIFICATION_HOST:localhost}:50055
       negotiation-type: plaintext
 
 # JWT
@@ -42,4 +42,4 @@ management:
       probability: 1.0
   otlp:
     tracing:
-      endpoint: http://localhost:4318/v1/traces
+      endpoint: http://${OTEL_HOST:localhost}:4318/v1/traces

@@ -8,58 +8,103 @@
 | Layer | Technology |
 |-------|------------|
 | Frontend | Expo (React Native) |
-| Backend | NestJS (TypeScript) |
-| ORM | Prisma |
-| DB + Storage | Supabase |
+| Backend | Kotlin + Spring Boot 3.5 (MSA, 6개 서비스) |
+| 서비스간 통신 | gRPC (동기) + Apache Kafka (비동기) |
+| ORM / Migration | JPA (Hibernate) + Flyway |
+| DB + Storage | Supabase (PostgreSQL + Storage) |
 | Push | FCM (expo-notifications) |
 | Auth | 카카오 OAuth + 이메일 fallback |
+| Observability | OpenTelemetry + Grafana + Tempo + Prometheus |
+| Build | Gradle multi-module 모노레포 |
+| Container | Docker Compose |
+
+상세: `plan-docs/eng-review.md`, `ai/decisions.md` (ADR-010~022)
 
 ## 로컬 실행
 
 ### 사전 준비
 
-- Node.js 18+
+- Java 21+ (Amazon Corretto 권장)
+- Docker & Docker Compose
+- Node.js 18+ (프론트엔드)
 - Expo CLI (`npm install -g expo-cli`)
-- Supabase 프로젝트 (DB + Storage)
-- Firebase 프로젝트 (FCM)
-- 카카오 개발자 앱
+- buf CLI (`brew install bufbuild/buf/buf`) — proto codegen
 
-### 환경변수
+### 인프라 기동
 
 ```bash
-cp .env.example .env
-# .env에 Supabase, Firebase, 카카오 키 입력
-# 상세: ai/env-vars.md 참고
+# PostgreSQL + Kafka + Observability 스택
+docker compose up -d
+
+# Kafka UI (디버깅용, 선택)
+docker compose --profile debug up -d kafka-ui
 ```
 
-### 백엔드
+- PostgreSQL: `localhost:5432` (mungcle / postgres / postgres)
+- Kafka: `localhost:9092`
+- Grafana: `http://localhost:3000` (admin / admin)
+
+### Proto 코드 생성
 
 ```bash
-cd backend
-npm install
-npx prisma generate
-npx prisma migrate dev
-npm run start:dev     # http://localhost:4000
+cd proto && buf generate
 ```
+
+### 백엔드 서비스
+
+```bash
+# 전체 빌드
+./gradlew build
+
+# 개별 서비스 실행 (예: identity)
+./gradlew :services:identity:bootRun
+
+# 개별 서비스 테스트
+./gradlew :services:identity:test
+```
+
+서비스별 포트:
+| 서비스 | gRPC 포트 | 역할 |
+|--------|-----------|------|
+| api-gateway | REST :4000 | BFF (클라이언트 진입점) |
+| identity | :50051 | 인증, 유저, 차단, 신고 |
+| pet-profile | :50052 | 개 프로필 |
+| walks | :50053 | 산책 상태, 시간대 패턴 |
+| social | :50054 | 인사, 메시지 |
+| notification | :50055 | FCM, 인앱 알림 |
 
 ### 프론트엔드 (Expo)
 
 ```bash
 cd frontend
 npm install
-npx expo start        # Expo DevTools
+npx expo start
 ```
 
 ## 프로젝트 구조
 
 ```
 mungcle/
-├── CLAUDE.md              # AI 코딩 가이드 (진입점)
-├── backend/               # NestJS API 서버 (클린 아키텍처)
-├── frontend/              # Expo React Native 앱 (Feature-based)
-├── plan-docs/             # 설계/리뷰 문서 ("무엇을" 만드는지)
-├── ai/                    # 코딩 가이드 ("어떻게" 만드는지)
-└── .claude/rules/         # 파일 유형별 자동 규칙
+├── CLAUDE.md                  # AI 코딩 가이드 (진입점)
+├── build.gradle.kts           # 루트 Gradle
+├── settings.gradle.kts        # 모노레포 모듈 정의
+├── docker-compose.yml         # 인프라 + 서비스
+├── proto/                     # gRPC Proto 정의 (buf)
+├── common/
+│   ├── domain-common/         # GridCell VO, TsidConfig
+│   └── kafka-common/          # 이벤트 DTO, 토픽 상수
+├── services/
+│   ├── api-gateway/           # Spring MVC BFF (REST → gRPC)
+│   ├── identity/              # 인증 + 유저 + 차단/신고
+│   ├── pet-profile/           # 개 프로필
+│   ├── walks/                 # 산책 + 패턴
+│   ├── social/                # 인사 + 메시지
+│   └── notification/          # FCM + 알림함
+├── frontend/                  # Expo React Native 앱
+├── infra/                     # Observability 설정
+├── plan-docs/                 # 설계/리뷰 문서
+├── ai/                        # 코딩 가이드
+└── .claude/rules/             # 파일 유형별 자동 규칙
 ```
 
 ## Phase 1 기능 (MVP)
