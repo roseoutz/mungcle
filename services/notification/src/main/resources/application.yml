@@ -28,6 +28,9 @@ spring:
       properties:
         spring.json.trusted.packages: com.mungcle.common.kafka
 
+server:
+  port: 8085
+
 grpc:
   server:
     port: 50055

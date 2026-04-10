@@ -19,11 +19,12 @@ Status: CLEARED (CEO + ENG + DESIGN all passed)
 2. "반려동물의 신뢰 정보(성향, 안전성)가 핵심 가치이며, 위치는 이 신뢰를 기반으로 안전한 만남을 지원하는 보조 수단이다" (Second opinion 도전으로 수정)
 3. "이 서비스는 사용자 밀도가 충분해야 가치가 있다"
 
-## 기술 스택 (Eng Review에서 확정)
+## 기술 스택 (Eng Review에서 확정, 2026-04-10 MSA 전환)
 
-Expo (React Native) + NestJS + Prisma + Supabase (DB+Storage) + FCM
+Expo (React Native) + Kotlin/Spring Boot 3.5 MSA + JPA + gRPC + Kafka + Supabase (DB+Storage) + FCM
 - 원안 웹 → 앱으로 변경 (푸시 알림 필수)
-- 상세: [eng-review.md](eng-review.md) 참고
+- 원안 NestJS 모놀리스 → Kotlin MSA 전환 (아키텍처 학습 목적, ADR-010)
+- 상세: [eng-review.md](eng-review.md), `ai/decisions.md` (ADR-010~022) 참고
 
 ## Phased Feature List
 

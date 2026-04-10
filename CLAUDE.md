@@ -53,11 +53,11 @@
 
 - 코드: 영어. 커밋 메시지/주석/문서: 한국어.
 - 커밋: `<type>(<scope>): <한글 설명>` (feat, fix, refactor, test, chore, docs)
-- 커밋 전 반드시 테스트 실행하여 정상 동작 확인. 테스트 실패 시 커밋 금지.
-- 브랜치: `feature/<name>`, `fix/<name>`
+- 커밋 전 반드시 `./gradlew test` (백엔드) 또는 `npm test` (프론트) 실행. 테스트 실패 시 커밋 금지.
+- 브랜치: `develop` → `feature/<name>`, `fix/<name>`
 - TDD 권장. 강제는 아님.
 - GPS 좌표 저장 금지 — 200m 그리드 스냅만 저장.
-- N+1 방지: Prisma `include` 사용.
+- N+1 방지: JPA `@EntityGraph` / `JOIN FETCH` 사용.
 
 ## 작업 판단 흐름
 
