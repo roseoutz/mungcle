@@ -3,12 +3,15 @@
 ## 브랜치
 
 ```
-main
-  └── feature/<name>   # 새 기능
-  └── fix/<name>       # 버그 수정
+main                          # 프로덕션 릴리스
+  └── develop                 # 통합 개발 브랜치
+        └── feature/<name>    # 새 기능 (develop에서 분기 → develop으로 PR)
+        └── fix/<name>        # 버그 수정
 ```
 
-- main에 직접 푸시 금지. PR을 통해서만.
+- main, develop에 직접 푸시 금지. PR을 통해서만.
+- feature/fix 브랜치는 **develop**에서 분기하고 develop으로 머지.
+- develop → main 머지는 릴리스 시점에만.
 - 브랜치 이름은 영어, kebab-case: `feature/dog-profile`, `fix/grid-snap-boundary`
 
 ## 커밋

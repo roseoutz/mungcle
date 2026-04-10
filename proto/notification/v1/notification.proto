@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option java_multiple_files = true;
+option java_package = "com.mungcle.proto.notification.v1";
+
+service NotificationService {
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+  rpc MarkAllRead(MarkAllReadRequest) returns (MarkAllReadResponse);
+}
+
+message ListNotificationsRequest {
+  int64 user_id = 1;
+  optional int64 cursor = 2;
+  int32 limit = 3;
+}
+
+message ListNotificationsResponse {
+  repeated NotificationInfo notifications = 1;
+  optional int64 next_cursor = 2;
+}
+
+message MarkReadRequest {
+  int64 notification_id = 1;
+  int64 user_id = 2;
+}
+
+message MarkReadResponse {}
+
+message MarkAllReadRequest {
+  int64 user_id = 1;
+}
+
+message MarkAllReadResponse {}
+
+message NotificationInfo {
+  int64 id = 1;
+  int64 user_id = 2;
+  NotificationType type = 3;
+  string payload_json = 4;
+  bool read = 5;
+  int64 created_at = 6;
+}
+
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_GREETING_RECEIVED = 1;
+  NOTIFICATION_TYPE_GREETING_ACCEPTED = 2;
+  NOTIFICATION_TYPE_MESSAGE_RECEIVED = 3;
+  NOTIFICATION_TYPE_WALK_EXPIRED = 4;
+}

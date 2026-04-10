@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package pet_profile.v1;
+
+option java_multiple_files = true;
+option java_package = "com.mungcle.proto.petprofile.v1";
+
+service PetProfileService {
+  rpc CreateDog(CreateDogRequest) returns (DogInfo);
+  rpc GetDog(GetDogRequest) returns (DogInfo);
+  rpc GetDogsByOwner(GetDogsByOwnerRequest) returns (GetDogsResponse);
+  rpc GetDogsByIds(GetDogsByIdsRequest) returns (GetDogsResponse);
+  rpc UpdateDog(UpdateDogRequest) returns (DogInfo);
+  rpc DeleteDog(DeleteDogRequest) returns (DeleteDogResponse);
+}
+
+message CreateDogRequest {
+  int64 owner_id = 1;
+  string name = 2;
+  string breed = 3;
+  DogSize size = 4;
+  repeated string temperaments = 5;
+  int32 sociability = 6;
+  optional string photo_path = 7;
+  optional string vaccination_photo_path = 8;
+}
+
+message GetDogRequest {
+  int64 dog_id = 1;
+}
+
+message GetDogsByOwnerRequest {
+  int64 owner_id = 1;
+}
+
+message GetDogsByIdsRequest {
+  repeated int64 dog_ids = 1;
+}
+
+message GetDogsResponse {
+  repeated DogInfo dogs = 1;
+}
+
+message UpdateDogRequest {
+  int64 dog_id = 1;
+  int64 requester_id = 2;
+  optional string name = 3;
+  optional string breed = 4;
+  optional DogSize size = 5;
+  repeated string temperaments = 6;
+  optional int32 sociability = 7;
+  optional string photo_path = 8;
+  optional string vaccination_photo_path = 9;
+}
+
+message DeleteDogRequest {
+  int64 dog_id = 1;
+  int64 requester_id = 2;
+}
+
+message DeleteDogResponse {}
+
+message DogInfo {
+  int64 id = 1;
+  int64 owner_id = 2;
+  string name = 3;
+  string breed = 4;
+  DogSize size = 5;
+  repeated string temperaments = 6;
+  int32 sociability = 7;
+  string photo_url = 8;
+  bool vaccination_registered = 9;
+}
+
+enum DogSize {
+  DOG_SIZE_UNSPECIFIED = 0;
+  DOG_SIZE_SMALL = 1;
+  DOG_SIZE_MEDIUM = 2;
+  DOG_SIZE_LARGE = 3;
+}
