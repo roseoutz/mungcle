@@ -1,16 +1,11 @@
 {
-  "name": "pet",
-  "version": "0.0.1",
+  "name": "mungcle",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "npm --prefix backend run start:dev",
     "dev:frontend": "npm --prefix frontend run dev",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
-    "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",
-    "test": "npm --prefix backend run test",
-    "test:e2e": "npm --prefix backend run test:e2e"
+    "test:frontend": "npm --prefix frontend run test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

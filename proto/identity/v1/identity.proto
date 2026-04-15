@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package identity.v1;
+
+option java_multiple_files = true;
+option java_package = "com.mungcle.proto.identity.v1";
+
+service IdentityService {
+  rpc AuthenticateKakao(AuthenticateKakaoRequest) returns (AuthResponse);
+  rpc RegisterEmail(RegisterEmailRequest) returns (AuthResponse);
+  rpc LoginEmail(LoginEmailRequest) returns (AuthResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc UpdatePushToken(UpdatePushTokenRequest) returns (UpdatePushTokenResponse);
+
+  rpc GetUser(GetUserRequest) returns (UserInfo);
+  rpc GetUsersByIds(GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UserInfo);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  rpc CreateBlock(CreateBlockRequest) returns (CreateBlockResponse);
+  rpc DeleteBlock(DeleteBlockRequest) returns (DeleteBlockResponse);
+  rpc ListBlocks(ListBlocksRequest) returns (ListBlocksResponse);
+  rpc GetBlockedUserIds(GetBlockedUserIdsRequest) returns (GetBlockedUserIdsResponse);
+  rpc IsBlocked(IsBlockedRequest) returns (IsBlockedResponse);
+
+  rpc CreateReport(CreateReportRequest) returns (CreateReportResponse);
+}
+
+// --- Auth ---
+message AuthenticateKakaoRequest {
+  string kakao_access_token = 1;
+}
+
+message RegisterEmailRequest {
+  string email = 1;
+  string password = 2;
+  string nickname = 3;
+}
+
+message LoginEmailRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  UserInfo user = 2;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  int64 user_id = 1;
+  bool valid = 2;
+}
+
+message UpdatePushTokenRequest {
+  int64 user_id = 1;
+  string push_token = 2;
+}
+
+message UpdatePushTokenResponse {}
+
+// --- User ---
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
+message GetUsersByIdsRequest {
+  repeated int64 user_ids = 1;
+}
+
+message GetUsersByIdsResponse {
+  repeated UserInfo users = 1;
+}
+
+message UpdateUserRequest {
+  int64 user_id = 1;
+  optional string nickname = 2;
+  optional string neighborhood = 3;
+  optional string profile_photo_path = 4;
+}
+
+message DeleteUserRequest {
+  int64 user_id = 1;
+}
+
+message DeleteUserResponse {}
+
+message UserInfo {
+  int64 id = 1;
+  string nickname = 2;
+  string neighborhood = 3;
+  string profile_photo_url = 4;
+}
+
+// --- Block ---
+message CreateBlockRequest {
+  int64 blocker_id = 1;
+  int64 blocked_id = 2;
+}
+
+message CreateBlockResponse {}
+
+message DeleteBlockRequest {
+  int64 blocker_id = 1;
+  int64 blocked_id = 2;
+}
+
+message DeleteBlockResponse {}
+
+message ListBlocksRequest {
+  int64 user_id = 1;
+}
+
+message ListBlocksResponse {
+  repeated BlockInfo blocks = 1;
+}
+
+message BlockInfo {
+  int64 blocked_user_id = 1;
+  string blocked_nickname = 2;
+  int64 created_at = 3;
+}
+
+message GetBlockedUserIdsRequest {
+  int64 user_id = 1;
+}
+
+message GetBlockedUserIdsResponse {
+  repeated int64 blocked_user_ids = 1;
+}
+
+message IsBlockedRequest {
+  int64 user_id_a = 1;
+  int64 user_id_b = 2;
+}
+
+message IsBlockedResponse {
+  bool blocked = 1;
+}
+
+// --- Report ---
+message CreateReportRequest {
+  int64 reporter_id = 1;
+  int64 reported_id = 2;
+  string reason = 3;
+}
+
+message CreateReportResponse {}

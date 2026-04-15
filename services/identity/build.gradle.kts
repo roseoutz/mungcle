@@ -1,0 +1,59 @@
+plugins {
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    kotlin("plugin.jpa")
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+}
+
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.Embeddable")
+    annotation("jakarta.persistence.MappedSuperclass")
+}
+
+dependencies {
+    implementation(project(":common:domain-common"))
+    implementation(project(":common:kafka-common"))
+
+    // Spring Boot
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    // gRPC Server
+    implementation("net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE")
+    implementation("io.grpc:grpc-kotlin-stub:${property("grpcKotlinVersion")}")
+    implementation("io.grpc:grpc-protobuf:${property("grpcVersion")}")
+    implementation("com.google.protobuf:protobuf-kotlin:${property("protobufVersion")}")
+
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+
+    // DB
+    runtimeOnly("org.postgresql:postgresql")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:${property("hypersistenceVersion")}")
+
+    // JWT (identity가 토큰 생성)
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
+    // BCrypt
+    implementation("org.springframework.security:spring-security-crypto")
+
+    // Observability
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+
+    // Jackson
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
+
+    // Test
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.mockk:mockk:${property("mockkVersion")}")
+    testImplementation("org.testcontainers:postgresql:${property("testcontainersVersion")}")
+    testImplementation("org.testcontainers:junit-jupiter:${property("testcontainersVersion")}")
+}
