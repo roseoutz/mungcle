@@ -19,6 +19,9 @@ spring:
     schemas: pet_profile
     locations: classpath:db/migration
 
+server:
+  port: 8082
+
 grpc:
   server:
     port: 50052

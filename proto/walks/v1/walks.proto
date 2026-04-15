@@ -28,10 +28,9 @@ message StopWalkRequest {
 }
 
 message GetNearbyWalksRequest {
-  double lat = 1;
-  double lng = 2;
-  int64 user_id = 3;
-  repeated int64 blocked_user_ids = 4;
+  string grid_cell = 1;  // gateway가 lat/lng → gridCell 스냅 후 전달 (ADR-005)
+  int64 user_id = 2;
+  repeated int64 blocked_user_ids = 3;
 }
 
 message GetNearbyWalksResponse {
@@ -55,10 +54,9 @@ message GetWalkGridCellResponse {
 }
 
 message GetNearbyPatternsRequest {
-  double lat = 1;
-  double lng = 2;
-  int64 user_id = 3;
-  repeated int64 blocked_user_ids = 4;
+  string grid_cell = 1;  // gateway가 lat/lng → gridCell 스냅 후 전달 (ADR-005)
+  int64 user_id = 2;
+  repeated int64 blocked_user_ids = 3;
 }
 
 message GetNearbyPatternsResponse {

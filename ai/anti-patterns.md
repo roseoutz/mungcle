@@ -2,24 +2,26 @@
 
 AI가 반복하기 쉬운 실수와 프로젝트에서 금지하는 패턴.
 
-## TypeScript 공통
+## Kotlin 공통
 
-- `any` 타입 사용 금지. `unknown`으로 대체하거나 구체적 타입 정의.
-- 의존성 추가 전 반드시 사용자에게 확인. 임의로 `npm install` 금지.
-- default export 사용 금지. named export만 사용.
-- 유틸리티 파일 생성 금지. 헬퍼는 사용하는 곳 근처에 배치.
-- `console.log` 디버깅 코드 커밋 금지.
+- `!!` (non-null assertion) 프로덕션 코드에서 금지. `?: throw` 또는 `?.let {}` 사용.
+- Java `Optional` 사용 금지. Kotlin nullable `?`로 대체.
+- 의존성 추가 전 반드시 사용자에게 확인. 임의로 의존성 추가 금지.
+- `companion object`에 비즈니스 로직 금지. factory 메서드나 상수만.
+- `println` 디버깅 코드 커밋 금지.
+- `lateinit` 남발 금지. DI 주입 외에는 사용 금지.
 
-## Backend (NestJS + Prisma)
+## Backend (Kotlin + Spring Boot + JPA + gRPC)
 
-- Controller에 비즈니스 로직 넣지 않는다.
-- catch-all (`catch (error)`, `catch (e: any)`) 금지. 구체적 예외만 잡는다.
+- gRPC 서버 구현에 비즈니스 로직 넣지 않는다. UseCase에서만.
+- catch-all (`catch (e: Exception)`) 금지. 구체적 예외만 잡는다.
 - GPS 좌표를 DB에 직접 저장하지 않는다. 200m 그리드 ID만.
-- Prisma `findMany` 시 `include` 없이 호출하지 않는다 (N+1).
-- 이미 적용된 마이그레이션 파일을 수정하지 않는다. 새 마이그레이션을 만든다.
-- 모듈 간 순환 의존을 만들지 않는다.
-- domain/ 레이어에서 NestJS, Prisma를 import하지 않는다.
-- `@Transactional` 또는 트랜잭션 로직을 Controller에 넣지 않는다.
+- JPA `findAll`/`findMany` 시 `@EntityGraph` 또는 `JOIN FETCH` 없이 호출하지 않는다 (N+1).
+- 이미 적용된 Flyway 마이그레이션 파일을 수정하지 않는다. 새 마이그레이션을 만든다.
+- Cross-schema JOIN 금지. 다른 서비스 데이터는 gRPC로만 조회.
+- domain/ 레이어에서 Spring, JPA, gRPC, Kafka를 import하지 않는다.
+- `@Transactional`을 gRPC 서버 구현이나 도메인 서비스에 넣지 않는다. application 레이어만.
+- 서비스간 직접 메서드 호출 금지. gRPC 또는 Kafka로만.
 
 ## Frontend (Expo / React Native)
 
@@ -32,7 +34,6 @@ AI가 반복하기 쉬운 실수와 프로젝트에서 금지하는 패턴.
 
 ## Supabase
 
-- Supabase 테이블 생성 시 RLS(Row Level Security) 정책 반드시 설정.
 - Storage 버킷의 공개 범위를 필요 이상으로 열지 않는다.
 - 서비스 키(service_role)를 프론트엔드 코드에서 사용하지 않는다.
 

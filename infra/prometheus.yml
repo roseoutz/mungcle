@@ -11,6 +11,7 @@ scrape_configs:
     static_configs:
       - targets: ['api-gateway:4000']
 
+  # gRPC 서비스들: management.server.port 설정 기준
   - job_name: 'identity'
     metrics_path: /actuator/prometheus
     static_configs:

@@ -28,6 +28,7 @@ dependencyResolutionManagement {
 // Common modules
 include("common:domain-common")
 include("common:kafka-common")
+include("common:grpc-client")
 
 // Services
 include("services:api-gateway")
