@@ -14,8 +14,20 @@ data class User(
     val passwordHash: String? = null,
     val nickname: String,
     val pushToken: String? = null,
+    val neighborhood: String? = null,
+    val profilePhotoPath: String? = null,
+    val flaggedForReview: Boolean = false,
+    val deletedAt: Instant? = null,
     val createdAt: Instant = Instant.now()
 ) {
+    /** 회원 탈퇴 소프트 삭제 — 개인정보 익명화 */
+    fun softDelete(): User = copy(
+        email = "deleted_${id}@",
+        kakaoId = null,
+        nickname = "탈퇴한 사용자",
+        deletedAt = Instant.now(),
+    )
+
     companion object {
         private val NICKNAME_REGEX = Regex("^[가-힣a-zA-Z0-9_]{2,16}$")
 

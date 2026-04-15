@@ -1,9 +1,19 @@
 package com.mungcle.identity.infrastructure.grpc.server
 
 import com.mungcle.identity.domain.port.`in`.AuthenticateKakaoUseCase
+import com.mungcle.identity.domain.port.`in`.CreateBlockUseCase
+import com.mungcle.identity.domain.port.`in`.CreateReportUseCase
+import com.mungcle.identity.domain.port.`in`.DeleteBlockUseCase
+import com.mungcle.identity.domain.port.`in`.DeleteUserUseCase
+import com.mungcle.identity.domain.port.`in`.GetBlockedUserIdsUseCase
+import com.mungcle.identity.domain.port.`in`.GetUserUseCase
+import com.mungcle.identity.domain.port.`in`.GetUsersByIdsUseCase
+import com.mungcle.identity.domain.port.`in`.IsBlockedUseCase
+import com.mungcle.identity.domain.port.`in`.ListBlocksUseCase
 import com.mungcle.identity.domain.port.`in`.LoginEmailUseCase
 import com.mungcle.identity.domain.port.`in`.RegisterEmailUseCase
 import com.mungcle.identity.domain.port.`in`.UpdatePushTokenUseCase
+import com.mungcle.identity.domain.port.`in`.UpdateUserUseCase
 import com.mungcle.identity.domain.port.`in`.ValidateTokenUseCase
 import com.mungcle.proto.identity.v1.AuthResponse
 import com.mungcle.proto.identity.v1.AuthenticateKakaoRequest
@@ -35,6 +45,15 @@ import com.mungcle.proto.identity.v1.UserInfo
 import com.mungcle.proto.identity.v1.ValidateTokenRequest
 import com.mungcle.proto.identity.v1.ValidateTokenResponse
 import com.mungcle.proto.identity.v1.authResponse
+import com.mungcle.proto.identity.v1.blockInfo
+import com.mungcle.proto.identity.v1.createBlockResponse
+import com.mungcle.proto.identity.v1.createReportResponse
+import com.mungcle.proto.identity.v1.deleteBlockResponse
+import com.mungcle.proto.identity.v1.deleteUserResponse
+import com.mungcle.proto.identity.v1.getBlockedUserIdsResponse
+import com.mungcle.proto.identity.v1.getUsersByIdsResponse
+import com.mungcle.proto.identity.v1.isBlockedResponse
+import com.mungcle.proto.identity.v1.listBlocksResponse
 import com.mungcle.proto.identity.v1.updatePushTokenResponse
 import com.mungcle.proto.identity.v1.userInfo
 import com.mungcle.proto.identity.v1.validateTokenResponse
@@ -50,6 +69,16 @@ class IdentityAuthGrpcService(
     private val loginEmailUseCase: LoginEmailUseCase,
     private val validateTokenUseCase: ValidateTokenUseCase,
     private val updatePushTokenUseCase: UpdatePushTokenUseCase,
+    private val getUserUseCase: GetUserUseCase,
+    private val getUsersByIdsUseCase: GetUsersByIdsUseCase,
+    private val updateUserUseCase: UpdateUserUseCase,
+    private val deleteUserUseCase: DeleteUserUseCase,
+    private val createBlockUseCase: CreateBlockUseCase,
+    private val deleteBlockUseCase: DeleteBlockUseCase,
+    private val listBlocksUseCase: ListBlocksUseCase,
+    private val getBlockedUserIdsUseCase: GetBlockedUserIdsUseCase,
+    private val isBlockedUseCase: IsBlockedUseCase,
+    private val createReportUseCase: CreateReportUseCase,
 ) : IdentityServiceGrpcKt.IdentityServiceCoroutineImplBase() {
 
     override suspend fun authenticateKakao(request: AuthenticateKakaoRequest): AuthResponse {
@@ -100,36 +129,91 @@ class IdentityAuthGrpcService(
         return updatePushTokenResponse { }
     }
 
-    // 나머지 RPC는 task 02에서 구현 예정
-    override suspend fun getUser(request: GetUserRequest): UserInfo =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun getUser(request: GetUserRequest): UserInfo {
+        val user = getUserUseCase.execute(request.userId)
+        return userInfo {
+            id = user.id
+            nickname = user.nickname
+            neighborhood = user.neighborhood ?: ""
+            profilePhotoUrl = user.profilePhotoPath ?: ""
+        }
+    }
 
-    override suspend fun getUsersByIds(request: GetUsersByIdsRequest): GetUsersByIdsResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun getUsersByIds(request: GetUsersByIdsRequest): GetUsersByIdsResponse {
+        val users = getUsersByIdsUseCase.execute(request.userIdsList)
+        return getUsersByIdsResponse {
+            this.users += users.map { u ->
+                userInfo {
+                    id = u.id
+                    nickname = u.nickname
+                    neighborhood = u.neighborhood ?: ""
+                    profilePhotoUrl = u.profilePhotoPath ?: ""
+                }
+            }
+        }
+    }
 
-    override suspend fun updateUser(request: UpdateUserRequest): UserInfo =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun updateUser(request: UpdateUserRequest): UserInfo {
+        val user = updateUserUseCase.execute(
+            UpdateUserUseCase.Command(
+                userId = request.userId,
+                nickname = if (request.hasNickname()) request.nickname else null,
+                neighborhood = if (request.hasNeighborhood()) request.neighborhood else null,
+                profilePhotoPath = if (request.hasProfilePhotoPath()) request.profilePhotoPath else null,
+            )
+        )
+        return userInfo {
+            id = user.id
+            nickname = user.nickname
+            neighborhood = user.neighborhood ?: ""
+            profilePhotoUrl = user.profilePhotoPath ?: ""
+        }
+    }
 
-    override suspend fun deleteUser(request: DeleteUserRequest): DeleteUserResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun deleteUser(request: DeleteUserRequest): DeleteUserResponse {
+        deleteUserUseCase.execute(request.userId)
+        return deleteUserResponse { }
+    }
 
-    override suspend fun createBlock(request: CreateBlockRequest): CreateBlockResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun createBlock(request: CreateBlockRequest): CreateBlockResponse {
+        createBlockUseCase.execute(request.blockerId, request.blockedId)
+        return createBlockResponse { }
+    }
 
-    override suspend fun deleteBlock(request: DeleteBlockRequest): DeleteBlockResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun deleteBlock(request: DeleteBlockRequest): DeleteBlockResponse {
+        deleteBlockUseCase.execute(request.blockerId, request.blockedId)
+        return deleteBlockResponse { }
+    }
 
-    override suspend fun listBlocks(request: ListBlocksRequest): ListBlocksResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun listBlocks(request: ListBlocksRequest): ListBlocksResponse {
+        val blocks = listBlocksUseCase.execute(request.userId)
+        return listBlocksResponse {
+            this.blocks += blocks.map { b ->
+                blockInfo {
+                    blockedUserId = b.blockedId
+                    blockedNickname = ""
+                    createdAt = b.createdAt.epochSecond
+                }
+            }
+        }
+    }
 
-    override suspend fun getBlockedUserIds(request: GetBlockedUserIdsRequest): GetBlockedUserIdsResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun getBlockedUserIds(request: GetBlockedUserIdsRequest): GetBlockedUserIdsResponse {
+        val ids = getBlockedUserIdsUseCase.execute(request.userId)
+        return getBlockedUserIdsResponse {
+            this.blockedUserIds += ids
+        }
+    }
 
-    override suspend fun isBlocked(request: IsBlockedRequest): IsBlockedResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun isBlocked(request: IsBlockedRequest): IsBlockedResponse {
+        val blocked = isBlockedUseCase.execute(request.userIdA, request.userIdB)
+        return isBlockedResponse { this.blocked = blocked }
+    }
 
-    override suspend fun createReport(request: CreateReportRequest): CreateReportResponse =
-        throw StatusException(Status.UNIMPLEMENTED)
+    override suspend fun createReport(request: CreateReportRequest): CreateReportResponse {
+        createReportUseCase.execute(request.reporterId, request.reportedId, request.reason)
+        return createReportResponse { }
+    }
 
     private fun AuthResult.toAuthResponse(): AuthResponse = authResponse {
         accessToken = this@toAuthResponse.accessToken

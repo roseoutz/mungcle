@@ -17,4 +17,7 @@ interface UserRepositoryPort {
 
     /** 카카오 ID로 사용자 조회 */
     suspend fun findByKakaoId(kakaoId: String): User?
+
+    /** 여러 ID로 사용자 목록 조회 */
+    suspend fun findByIds(ids: List<Long>): List<User>
 }

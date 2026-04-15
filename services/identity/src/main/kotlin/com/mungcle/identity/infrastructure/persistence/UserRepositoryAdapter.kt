@@ -23,4 +23,7 @@ class UserRepositoryAdapter(
 
     override suspend fun findByKakaoId(kakaoId: String): User? =
         springDataRepository.findByKakaoId(kakaoId).orElse(null)?.let(UserMapper::toDomain)
+
+    override suspend fun findByIds(ids: List<Long>): List<User> =
+        springDataRepository.findByIdIn(ids).map(UserMapper::toDomain)
 }

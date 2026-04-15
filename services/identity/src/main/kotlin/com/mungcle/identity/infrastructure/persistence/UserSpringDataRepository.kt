@@ -6,4 +6,5 @@ import java.util.Optional
 interface UserSpringDataRepository : JpaRepository<UserEntity, Long> {
     fun findByEmail(email: String): Optional<UserEntity>
     fun findByKakaoId(kakaoId: String): Optional<UserEntity>
+    fun findByIdIn(ids: List<Long>): List<UserEntity>
 }
