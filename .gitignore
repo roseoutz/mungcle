@@ -7,7 +7,7 @@ build/
 .expo/
 ios/
 android/
-out/
+/out/
 
 # Gradle
 .gradle/

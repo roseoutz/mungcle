@@ -15,6 +15,7 @@ allOpen {
 dependencies {
     implementation(project(":common:domain-common"))
     implementation(project(":common:kafka-common"))
+    implementation(project(":common:grpc-client"))
 
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -26,6 +27,10 @@ dependencies {
     implementation("io.grpc:grpc-kotlin-stub:${property("grpcKotlinVersion")}")
     implementation("io.grpc:grpc-protobuf:${property("grpcVersion")}")
     implementation("com.google.protobuf:protobuf-kotlin:${property("protobufVersion")}")
+
+    // WebClient (카카오 API 호출)
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
 
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
@@ -54,6 +59,7 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:${property("mockkVersion")}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     testImplementation("org.testcontainers:postgresql:${property("testcontainersVersion")}")
     testImplementation("org.testcontainers:junit-jupiter:${property("testcontainersVersion")}")
 }
