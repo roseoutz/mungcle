@@ -22,6 +22,6 @@ data class Walk(
     /** OPEN 산책인지 확인 */
     fun isOpen(): Boolean = type == WalkType.OPEN
 
-    /** 산책 종료 처리 -- 새 복사본 반환 */
-    fun end(now: Instant): Walk = copy(status = WalkStatus.ENDED)
+    /** 산책 종료 처리 -- 새 복사본 반환 (endsAt을 실제 종료 시각으로 업데이트) */
+    fun end(now: Instant): Walk = copy(status = WalkStatus.ENDED, endsAt = now)
 }

@@ -58,6 +58,14 @@ class WalkTest {
     }
 
     @Test
+    fun `end - endsAt이 실제 종료 시각으로 업데이트`() {
+        val walk = createWalk(endsAt = now.plus(Duration.ofMinutes(60)))
+        val endTime = now.plus(Duration.ofMinutes(30))
+        val ended = walk.end(endTime)
+        assertEquals(endTime, ended.endsAt)
+    }
+
+    @Test
     fun `end - 다른 필드는 변경되지 않음`() {
         val walk = createWalk()
         val ended = walk.end(now)

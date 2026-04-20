@@ -5,6 +5,7 @@ import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.GetNearbyWalksUseCase
+import com.mungcle.walks.domain.port.out.IdentityPort
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -18,7 +19,8 @@ import kotlin.test.assertTrue
 class GetNearbyWalksQueryHandlerTest {
 
     private val walkRepository: WalkRepositoryPort = mockk()
-    private val handler = GetNearbyWalksQueryHandler(walkRepository)
+    private val identityPort: IdentityPort = mockk()
+    private val handler = GetNearbyWalksQueryHandler(walkRepository, identityPort)
 
     private val now = Instant.now()
 
@@ -44,6 +46,7 @@ class GetNearbyWalksQueryHandlerTest {
         val myWalk = createWalk(id = 1L, userId = 100L)
         val otherWalk = createWalk(id = 2L, userId = 200L)
         coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(myWalk, otherWalk)
+        coEvery { identityPort.getBlockedUserIds(100L) } returns emptyList()
 
         val result = handler.execute(
             GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = emptyList())
@@ -54,13 +57,29 @@ class GetNearbyWalksQueryHandlerTest {
     }
 
     @Test
-    fun `차단된 사용자 산책은 제외`() = runTest {
+    fun `차단된 사용자 산책은 제외 - request blockedUserIds`() = runTest {
         val blockedWalk = createWalk(id = 1L, userId = 300L)
         val normalWalk = createWalk(id = 2L, userId = 200L)
         coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(blockedWalk, normalWalk)
+        coEvery { identityPort.getBlockedUserIds(100L) } returns emptyList()
 
         val result = handler.execute(
             GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = listOf(300L))
+        )
+
+        assertEquals(1, result.size)
+        assertEquals(200L, result[0].userId)
+    }
+
+    @Test
+    fun `차단된 사용자 산책은 제외 - IdentityPort 조회`() = runTest {
+        val blockedWalk = createWalk(id = 1L, userId = 300L)
+        val normalWalk = createWalk(id = 2L, userId = 200L)
+        coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(blockedWalk, normalWalk)
+        coEvery { identityPort.getBlockedUserIds(100L) } returns listOf(300L)
+
+        val result = handler.execute(
+            GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = emptyList())
         )
 
         assertEquals(1, result.size)
@@ -72,6 +91,7 @@ class GetNearbyWalksQueryHandlerTest {
         val nearWalk = createWalk(id = 1L, userId = 200L, gridCell = "10:20")
         val farWalk = createWalk(id = 2L, userId = 300L, gridCell = "11:21")
         coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(nearWalk, farWalk)
+        coEvery { identityPort.getBlockedUserIds(100L) } returns emptyList()
 
         val result = handler.execute(
             GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = emptyList())
@@ -86,6 +106,7 @@ class GetNearbyWalksQueryHandlerTest {
     @Test
     fun `결과가 없으면 빈 리스트`() = runTest {
         coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        coEvery { identityPort.getBlockedUserIds(100L) } returns emptyList()
 
         val result = handler.execute(
             GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = emptyList())
@@ -95,11 +116,13 @@ class GetNearbyWalksQueryHandlerTest {
     }
 
     @Test
-    fun `본인과 차단 모두 제외`() = runTest {
+    fun `본인과 차단 모두 제외 - request와 IdentityPort 합산`() = runTest {
         val myWalk = createWalk(id = 1L, userId = 100L)
         val blockedWalk = createWalk(id = 2L, userId = 300L)
+        val anotherBlockedWalk = createWalk(id = 4L, userId = 400L)
         val normalWalk = createWalk(id = 3L, userId = 200L)
-        coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(myWalk, blockedWalk, normalWalk)
+        coEvery { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(myWalk, blockedWalk, anotherBlockedWalk, normalWalk)
+        coEvery { identityPort.getBlockedUserIds(100L) } returns listOf(400L)
 
         val result = handler.execute(
             GetNearbyWalksUseCase.Query(gridCell = "10:20", userId = 100L, blockedUserIds = listOf(300L))

@@ -27,6 +27,6 @@ object WalkMapper {
         status = domain.status.name,
         startedAt = domain.startedAt,
         endsAt = domain.endsAt,
-        endedAt = if (domain.status == WalkStatus.ENDED) domain.startedAt else null,
+        endedAt = if (domain.status == WalkStatus.ENDED) domain.endsAt else null,
     )
 }
