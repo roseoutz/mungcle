@@ -108,6 +108,18 @@ class DogTest {
         assertFalse(dog.isVaccinationRegistered())
     }
 
+    @Test
+    fun `예방접종 사진 빈 문자열이면 미등록`() {
+        val dog = createDog(vaccinationPhotoPath = "")
+        assertFalse(dog.isVaccinationRegistered())
+    }
+
+    @Test
+    fun `예방접종 사진 공백 문자열이면 미등록`() {
+        val dog = createDog(vaccinationPhotoPath = "   ")
+        assertFalse(dog.isVaccinationRegistered())
+    }
+
     // ─── 소유권 확인 ────────────────────────────────────────────────────
 
     @Test

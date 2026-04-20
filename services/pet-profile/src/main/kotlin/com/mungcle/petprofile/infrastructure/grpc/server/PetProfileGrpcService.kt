@@ -43,8 +43,8 @@ class PetProfileGrpcService(
                 size = toDomainSize(request.size),
                 temperaments = request.temperamentsList.map { Temperament.valueOf(it) },
                 sociability = request.sociability,
-                photoPath = if (request.hasPhotoPath()) request.photoPath else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath else null,
+                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
             )
         )
         return dog.toDogInfo()
@@ -83,8 +83,8 @@ class PetProfileGrpcService(
                     null
                 },
                 sociability = if (request.hasSociability()) request.sociability else null,
-                photoPath = if (request.hasPhotoPath()) request.photoPath else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath else null,
+                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
             )
         )
         return dog.toDogInfo()
