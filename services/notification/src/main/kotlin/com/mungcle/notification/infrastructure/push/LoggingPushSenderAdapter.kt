@@ -13,12 +13,13 @@ class LoggingPushSenderAdapter : PushSenderPort {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun sendPush(notification: Notification) {
+    override suspend fun sendPush(notification: Notification, pushToken: String) {
         log.info(
-            "[MVP Push] userId={}, type={}, payload={}",
+            "[MVP Push] userId={}, type={}, payload={}, pushToken={}",
             notification.userId,
             notification.type,
             notification.payload,
+            pushToken,
         )
     }
 }

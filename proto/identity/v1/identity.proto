@@ -94,6 +94,7 @@ message UserInfo {
   string nickname = 2;
   string neighborhood = 3;
   string profile_photo_url = 4;
+  string push_token = 5;
 }
 
 // --- Block ---
