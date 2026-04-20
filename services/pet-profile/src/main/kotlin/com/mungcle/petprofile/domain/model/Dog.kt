@@ -27,7 +27,7 @@ data class Dog(
     }
 
     /** 예방접종 사진 등록 여부 */
-    fun isVaccinationRegistered(): Boolean = vaccinationPhotoPath != null
+    fun isVaccinationRegistered(): Boolean = !vaccinationPhotoPath.isNullOrBlank()
 
     /** 소유권 확인. 불일치 시 [DogNotOwnedException] 발생 */
     fun verifyOwnership(requesterId: Long) {

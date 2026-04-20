@@ -43,8 +43,8 @@ class PetProfileGrpcService(
                 size = mapDogSize(request.size),
                 temperaments = request.temperamentsList.map { Temperament.valueOf(it) },
                 sociability = request.sociability,
-                photoPath = if (request.hasPhotoPath()) request.photoPath else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath else null,
+                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
             )
         )
         return dog.toDogInfo()
@@ -81,8 +81,8 @@ class PetProfileGrpcService(
                     request.temperamentsList.map { Temperament.valueOf(it) }
                 } else null,
                 sociability = if (request.hasSociability()) request.sociability else null,
-                photoPath = if (request.hasPhotoPath()) request.photoPath else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath else null,
+                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
             )
         )
         return dog.toDogInfo()
@@ -109,7 +109,7 @@ class PetProfileGrpcService(
         com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_SMALL -> DogSize.SMALL
         com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_MEDIUM -> DogSize.MEDIUM
         com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_LARGE -> DogSize.LARGE
-        else -> DogSize.MEDIUM
+        else -> throw IllegalArgumentException("유효하지 않은 반려견 크기입니다: $protoSize")
     }
 
     private fun mapDogSizeToProto(size: DogSize): com.mungcle.proto.petprofile.v1.DogSize = when (size) {

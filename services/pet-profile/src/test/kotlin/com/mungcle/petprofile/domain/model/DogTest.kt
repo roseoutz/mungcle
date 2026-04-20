@@ -98,6 +98,18 @@ class DogTest {
     }
 
     @Test
+    fun `예방접종 사진이 빈 문자열이면 미등록`() {
+        val dog = createDog().copy(vaccinationPhotoPath = "")
+        assertFalse(dog.isVaccinationRegistered())
+    }
+
+    @Test
+    fun `예방접종 사진이 공백이면 미등록`() {
+        val dog = createDog().copy(vaccinationPhotoPath = "   ")
+        assertFalse(dog.isVaccinationRegistered())
+    }
+
+    @Test
     fun `소프트 삭제`() {
         val dog = createDog()
         assertNull(dog.deletedAt)
