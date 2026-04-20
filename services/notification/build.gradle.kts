@@ -15,6 +15,7 @@ allOpen {
 dependencies {
     implementation(project(":common:domain-common"))
     implementation(project(":common:kafka-common"))
+    implementation(project(":common:grpc-client"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -40,7 +41,9 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("io.mockk:mockk:${property("mockkVersion")}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     testImplementation("org.testcontainers:postgresql:${property("testcontainersVersion")}")
     testImplementation("org.testcontainers:kafka:${property("testcontainersVersion")}")
     testImplementation("org.testcontainers:junit-jupiter:${property("testcontainersVersion")}")
