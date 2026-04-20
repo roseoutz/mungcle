@@ -28,6 +28,10 @@ dependencies {
     implementation("io.grpc:grpc-protobuf:${property("grpcVersion")}")
     implementation("com.google.protobuf:protobuf-kotlin:${property("protobufVersion")}")
 
+    // WebClient (카카오 API 호출)
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
+
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 

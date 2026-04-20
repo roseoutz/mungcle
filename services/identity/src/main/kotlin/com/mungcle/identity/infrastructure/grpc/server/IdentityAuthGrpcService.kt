@@ -84,7 +84,10 @@ class IdentityAuthGrpcService(
         val userId = validateTokenUseCase.execute(
             ValidateTokenUseCase.Query(accessToken = request.accessToken)
         ) ?: throw StatusException(Status.UNAUTHENTICATED.withDescription("유효하지 않은 토큰입니다"))
-        return validateTokenResponse { this.userId = userId }
+        return validateTokenResponse {
+            this.userId = userId
+            this.valid = true
+        }
     }
 
     override suspend fun updatePushToken(request: UpdatePushTokenRequest): UpdatePushTokenResponse {
