@@ -37,7 +37,7 @@ class CreateBlockCommandHandlerTest {
         every { blockRepository.existsByBlockerAndBlocked(1L, 1L) } returns false
         every { blockRepository.save(any()) } answers { firstArg() }
 
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        org.junit.jupiter.api.assertThrows<com.mungcle.identity.domain.exception.BlockSelfException> {
             handler.execute(blockerId = 1L, blockedId = 1L)
         }
     }

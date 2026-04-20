@@ -1,5 +1,7 @@
 package com.mungcle.identity.domain.model
 
+import com.mungcle.identity.domain.exception.InvalidReportReasonException
+import com.mungcle.identity.domain.exception.ReportSelfException
 import java.time.Instant
 
 /**
@@ -14,7 +16,7 @@ data class Report(
     val createdAt: Instant = Instant.now()
 ) {
     init {
-        require(reporterId != reportedId) { "자기 자신을 신고할 수 없습니다" }
-        require(reason.length in 1..500) { "신고 사유는 1~500자여야 합니다" }
+        if (reporterId == reportedId) throw ReportSelfException()
+        if (reason.length !in 1..500) throw InvalidReportReasonException()
     }
 }

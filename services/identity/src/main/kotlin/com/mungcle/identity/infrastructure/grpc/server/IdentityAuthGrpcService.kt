@@ -187,11 +187,17 @@ class IdentityAuthGrpcService(
 
     override suspend fun listBlocks(request: ListBlocksRequest): ListBlocksResponse {
         val blocks = listBlocksUseCase.execute(request.userId)
+        val blockedUserIds = blocks.map { it.blockedId }
+        val nicknameMap = if (blockedUserIds.isNotEmpty()) {
+            getUsersByIdsUseCase.execute(blockedUserIds).associate { it.id to it.nickname }
+        } else {
+            emptyMap()
+        }
         return listBlocksResponse {
             this.blocks += blocks.map { b ->
                 blockInfo {
                     blockedUserId = b.blockedId
-                    blockedNickname = ""
+                    blockedNickname = nicknameMap[b.blockedId] ?: ""
                     createdAt = b.createdAt.epochSecond
                 }
             }

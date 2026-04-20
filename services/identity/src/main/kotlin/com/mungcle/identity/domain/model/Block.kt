@@ -1,5 +1,6 @@
 package com.mungcle.identity.domain.model
 
+import com.mungcle.identity.domain.exception.BlockSelfException
 import java.time.Instant
 
 /**
@@ -12,5 +13,5 @@ data class Block(
     val blockedId: Long,
     val createdAt: Instant = Instant.now()
 ) {
-    init { require(blockerId != blockedId) { "자기 자신을 차단할 수 없습니다" } }
+    init { if (blockerId == blockedId) throw BlockSelfException() }
 }

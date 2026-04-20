@@ -1,5 +1,7 @@
 package com.mungcle.identity.domain.model
 
+import com.mungcle.identity.domain.exception.InvalidReportReasonException
+import com.mungcle.identity.domain.exception.ReportSelfException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
@@ -8,14 +10,14 @@ class ReportTest {
 
     @Test
     fun `자기 자신 신고 시 예외 발생`() {
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ReportSelfException> {
             Report(reporterId = 1L, reportedId = 1L, reason = "테스트")
         }
     }
 
     @Test
     fun `신고 사유 빈 문자열이면 예외 발생`() {
-        assertThrows<IllegalArgumentException> {
+        assertThrows<InvalidReportReasonException> {
             Report(reporterId = 1L, reportedId = 2L, reason = "")
         }
     }
@@ -23,7 +25,7 @@ class ReportTest {
     @Test
     fun `신고 사유 500자 초과 시 예외 발생`() {
         val longReason = "a".repeat(501)
-        assertThrows<IllegalArgumentException> {
+        assertThrows<InvalidReportReasonException> {
             Report(reporterId = 1L, reportedId = 2L, reason = longReason)
         }
     }

@@ -19,3 +19,6 @@ class BlockSelfException :
 
 class ReportSelfException :
     IdentityException("자기 자신을 신고할 수 없습니다")
+
+class InvalidReportReasonException :
+    IdentityException("신고 사유는 1~500자여야 합니다")

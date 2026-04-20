@@ -1,5 +1,6 @@
 package com.mungcle.identity.domain.model
 
+import com.mungcle.identity.domain.exception.BlockSelfException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
@@ -8,7 +9,7 @@ class BlockTest {
 
     @Test
     fun `자기 자신 차단 시 예외 발생`() {
-        assertThrows<IllegalArgumentException> {
+        assertThrows<BlockSelfException> {
             Block(blockerId = 1L, blockedId = 1L)
         }
     }
