@@ -10,6 +10,10 @@ object UserMapper {
         passwordHash = entity.passwordHash,
         nickname = entity.nickname,
         pushToken = entity.pushToken,
+        neighborhood = entity.neighborhood,
+        profilePhotoPath = entity.profilePhotoPath,
+        flaggedForReview = entity.flaggedForReview,
+        deletedAt = entity.deletedAt,
         createdAt = entity.createdAt,
     )
 
@@ -20,6 +24,10 @@ object UserMapper {
         passwordHash = domain.passwordHash,
         nickname = domain.nickname,
         pushToken = domain.pushToken,
+        neighborhood = domain.neighborhood,
+        profilePhotoPath = domain.profilePhotoPath,
+        flaggedForReview = domain.flaggedForReview,
+        deletedAt = domain.deletedAt,
         createdAt = domain.createdAt,
     )
 }

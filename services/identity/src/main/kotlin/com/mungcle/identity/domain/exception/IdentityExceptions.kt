@@ -13,3 +13,12 @@ class InvalidNicknameException(nickname: String) :
 
 class UserNotFoundException(id: Long) :
     IdentityException("사용자를 찾을 수 없습니다: $id")
+
+class BlockSelfException :
+    IdentityException("자기 자신을 차단할 수 없습니다")
+
+class ReportSelfException :
+    IdentityException("자기 자신을 신고할 수 없습니다")
+
+class InvalidReportReasonException :
+    IdentityException("신고 사유는 1~500자여야 합니다")
