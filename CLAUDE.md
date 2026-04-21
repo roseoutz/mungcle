@@ -37,7 +37,7 @@
 |------|----------|
 | `backend.md` | `services/**/*.kt`, `common/**/*.kt` |
 | `frontend.md` | `frontend/**/*.tsx`, `frontend/**/*.ts` |
-| `prisma.md` | `**/db/migration/**`, `**/persistence/**/*.kt`, `**/*.sql` |
+| `database.md` | `**/db/migration/**`, `**/persistence/**/*.kt`, `**/*.sql` |
 | `tests.md` | `**/*.spec.ts`, `**/*.test.ts`, `**/*.test.tsx` |
 
 ## 기술 스택
