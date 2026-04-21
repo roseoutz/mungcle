@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package social.v1;
+
+option java_multiple_files = true;
+option java_package = "com.mungcle.proto.social.v1";
+
+service SocialService {
+  rpc CreateGreeting(CreateGreetingRequest) returns (GreetingInfo);
+  rpc RespondGreeting(RespondGreetingRequest) returns (GreetingInfo);
+  rpc GetGreeting(GetGreetingRequest) returns (GreetingInfo);
+  rpc ListGreetings(ListGreetingsRequest) returns (ListGreetingsResponse);
+  rpc SendMessage(SendMessageRequest) returns (MessageInfo);
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+}
+
+message CreateGreetingRequest {
+  int64 sender_user_id = 1;
+  int64 sender_dog_id = 2;
+  int64 receiver_walk_id = 3;
+}
+
+message RespondGreetingRequest {
+  int64 greeting_id = 1;
+  int64 responder_user_id = 2;
+  bool accept = 3;
+}
+
+message GetGreetingRequest {
+  int64 greeting_id = 1;
+  int64 user_id = 2;
+}
+
+message ListGreetingsRequest {
+  int64 user_id = 1;
+  optional GreetingStatus status_filter = 2;
+  optional GreetingDirection direction_filter = 3;
+}
+
+message ListGreetingsResponse {
+  repeated GreetingInfo greetings = 1;
+}
+
+message SendMessageRequest {
+  int64 greeting_id = 1;
+  int64 sender_user_id = 2;
+  string body = 3;
+}
+
+message ListMessagesRequest {
+  int64 greeting_id = 1;
+  int64 user_id = 2;
+}
+
+message ListMessagesResponse {
+  repeated MessageInfo messages = 1;
+}
+
+message GreetingInfo {
+  int64 id = 1;
+  int64 sender_user_id = 2;
+  int64 receiver_user_id = 3;
+  int64 sender_dog_id = 4;
+  int64 receiver_dog_id = 5;
+  int64 receiver_walk_id = 6;
+  GreetingStatus status = 7;
+  int64 created_at = 8;
+  optional int64 responded_at = 9;
+  optional int64 expires_at = 10;
+}
+
+message MessageInfo {
+  int64 id = 1;
+  int64 greeting_id = 2;
+  int64 sender_user_id = 3;
+  string body = 4;
+  int64 created_at = 5;
+}
+
+enum GreetingStatus {
+  GREETING_STATUS_UNSPECIFIED = 0;
+  GREETING_STATUS_PENDING = 1;
+  GREETING_STATUS_ACCEPTED = 2;
+  GREETING_STATUS_EXPIRED = 3;
+}
+
+enum GreetingDirection {
+  GREETING_DIRECTION_UNSPECIFIED = 0;
+  GREETING_DIRECTION_SENT = 1;
+  GREETING_DIRECTION_RECEIVED = 2;
+}
