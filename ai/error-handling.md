@@ -4,75 +4,80 @@
 
 ### 도메인 예외 (domain/ 레이어)
 
-프레임워크 독립. 순수 TypeScript.
+프레임워크 독립. 순수 Kotlin.
 
-```typescript
-// common/domain/exceptions/base.exception.ts
-export abstract class DomainException extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+```kotlin
+// common/domain-common/src/.../exception/DomainException.kt
+abstract class DomainException(
+    val code: String,
+    override val message: String,
+) : RuntimeException(message)
 
-// dogs/domain/exceptions/
-export class DogNotFoundException extends DomainException {
-  constructor(id: string) {
-    super('DOG_NOT_FOUND', `개를 찾을 수 없습니다: ${id}`);
-  }
-}
+// pet-profile/domain/exception/
+class DogNotFoundException(id: Long) :
+    DomainException("DOG_NOT_FOUND", "개를 찾을 수 없습니다: $id")
 
-// walks/domain/exceptions/
-export class AlreadyWalkingException extends DomainException {
-  constructor(userId: string) {
-    super('ALREADY_WALKING', `이미 산책 중입니다`);
-  }
-}
+// walks/domain/exception/
+class AlreadyWalkingException(userId: Long) :
+    DomainException("ALREADY_WALKING", "이미 산책 중입니다")
 
-// greetings/domain/exceptions/
-export class GreetingExpiredException extends DomainException {
-  constructor(greetingId: string) {
-    super('GREETING_EXPIRED', `인사 시간이 만료되었습니다`);
-  }
-}
+// social/domain/exception/
+class GreetingExpiredException(greetingId: Long) :
+    DomainException("GREETING_EXPIRED", "인사 시간이 만료되었습니다")
 
-export class DuplicateGreetingException extends DomainException {
-  constructor() {
-    super('DUPLICATE_GREETING', `이미 인사를 보냈습니다`);
-  }
+class DuplicateGreetingException :
+    DomainException("DUPLICATE_GREETING", "이미 인사를 보냈습니다")
+```
+
+### gRPC 상태 변환 (infrastructure 레이어)
+
+gRPC ExceptionHandler에서 도메인 예외를 gRPC Status로 변환:
+
+```kotlin
+// common/grpc-common/src/.../GrpcExceptionAdvice.kt
+@GrpcAdvice
+class GrpcExceptionAdvice {
+
+    private val statusMap = mapOf(
+        "DOG_NOT_FOUND" to Status.NOT_FOUND,
+        "WALK_NOT_FOUND" to Status.NOT_FOUND,
+        "ALREADY_WALKING" to Status.ALREADY_EXISTS,
+        "DUPLICATE_GREETING" to Status.ALREADY_EXISTS,
+        "GREETING_EXPIRED" to Status.FAILED_PRECONDITION,
+        "BLOCKED_USER" to Status.PERMISSION_DENIED,
+        "NOT_OWNER" to Status.PERMISSION_DENIED,
+    )
+
+    @GrpcExceptionHandler(DomainException::class)
+    fun handleDomainException(e: DomainException): StatusRuntimeException {
+        val status = statusMap[e.code] ?: Status.INTERNAL
+        return status.withDescription(e.message).asRuntimeException()
+    }
 }
 ```
 
-### HTTP 변환 (presentation 레이어)
+### REST 에러 변환 (api-gateway)
 
-NestJS ExceptionFilter에서 도메인 예외를 HTTP 응답으로 변환:
+api-gateway에서 gRPC Status를 HTTP 응답으로 변환:
 
-```typescript
-// common/filters/domain-exception.filter.ts
-@Catch(DomainException)
-export class DomainExceptionFilter implements ExceptionFilter {
-  private readonly statusMap: Record<string, number> = {
-    DOG_NOT_FOUND: 404,
-    WALK_NOT_FOUND: 404,
-    ALREADY_WALKING: 409,
-    DUPLICATE_GREETING: 409,
-    GREETING_EXPIRED: 410,
-    BLOCKED_USER: 403,
-    NOT_OWNER: 403,
-  };
+```kotlin
+// api-gateway/.../RestExceptionHandler.kt
+@RestControllerAdvice
+class RestExceptionHandler {
 
-  catch(exception: DomainException, host: ArgumentsHost) {
-    const status = this.statusMap[exception.code] ?? 500;
-    const response = host.switchToHttp().getResponse();
-    response.status(status).json({
-      statusCode: status,
-      code: exception.code,
-      message: exception.message,
-      timestamp: new Date().toISOString(),
-    });
-  }
+    @ExceptionHandler(StatusRuntimeException::class)
+    fun handleGrpcException(e: StatusRuntimeException): ResponseEntity<ErrorResponse> {
+        val httpStatus = when (e.status.code) {
+            Status.Code.NOT_FOUND -> HttpStatus.NOT_FOUND
+            Status.Code.ALREADY_EXISTS -> HttpStatus.CONFLICT
+            Status.Code.PERMISSION_DENIED -> HttpStatus.FORBIDDEN
+            Status.Code.FAILED_PRECONDITION -> HttpStatus.GONE
+            else -> HttpStatus.INTERNAL_SERVER_ERROR
+        }
+        return ResponseEntity.status(httpStatus).body(
+            ErrorResponse(httpStatus.value(), e.status.description, Instant.now())
+        )
+    }
 }
 ```
 

@@ -32,10 +32,10 @@
 [기획 완료] plan-docs/ 참고
      ↓
 [구현] OMC team 병렬 실행
-     │  Lane A: auth + users + prisma schema (먼저)
-     │  Lane B: dogs + reports (A 후)
-     │  Lane C: walks + patterns (A 후)
-     │  Lane D: greetings + messages (A+C 후)
+     │  Lane A: proto + common + identity-service (먼저)
+     │  Lane B: pet-profile-service (A 후)
+     │  Lane C: walks-service (A 후)
+     │  Lane D: social-service (A+C 후)
      │  Lane E: expo app shell (A와 병렬)
      ↓
 [검토] gstack review
@@ -51,4 +51,4 @@
 
 - 기능 구현 후 반드시 관련 테스트 실행
 - 테스트 실패 시 수정 후 재실행 (통과할 때까지)
-- PR 전 `npx prisma validate` + lint + test 전체 통과 확인
+- PR 전 `./gradlew test` + lint + build 전체 통과 확인

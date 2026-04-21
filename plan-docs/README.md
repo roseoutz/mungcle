@@ -15,7 +15,7 @@
 ## 핵심 결정 요약
 
 - **핵심 전환:** 위치 발견 → 신뢰/안전 중심
-- **기술 스택:** Expo (React Native) + NestJS + Prisma + Supabase + FCM
+- **기술 스택:** Expo (React Native) + Kotlin + Spring Boot 3.5 (MSA) + JPA + Flyway + Supabase + gRPC + Kafka + FCM
 - **Phase 1 (5개 기능):** 개 프로필, 산책 상태, 주변 탐색+인사+메시지, 차단/신고, 시간대 패턴
 - **Phase 2 (4개 기능):** 산책 로그, 산책 친구, 산책 예고(친구만), 장소 리뷰
 - **Go/No-go:** 2주간 한 동네에서 인사하기 전환율 측정

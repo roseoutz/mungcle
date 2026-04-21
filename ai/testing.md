@@ -10,7 +10,7 @@
 
 | 영역 | 도구 |
 |------|------|
-| Backend unit/integration | Jest + Supertest |
+| Backend unit/integration | JUnit 5 + MockK + Testcontainers + grpc-testing |
 | Frontend component | Jest + React Native Testing Library |
 | E2E | 추후 결정 (MVP에서는 수동 + gstack qa) |
 
@@ -23,10 +23,11 @@
 
 ## Backend 테스트 규칙
 
-- 파일명: `<module>.service.spec.ts`, `<module>.controller.spec.ts`
-- Service 테스트: Prisma를 모킹. 비즈니스 로직 검증.
-- Controller 테스트: Supertest로 HTTP 요청/응답 검증.
-- 에러 케이스 반드시 포함: 404, 409, 403 등.
+- 파일명: `<UseCase>Test.kt`, `<Repository>IntegrationTest.kt`
+- Unit 테스트: MockK으로 포트 모킹. 도메인/유스케이스 로직 검증.
+- Integration 테스트: Testcontainers로 PostgreSQL/Kafka 실제 컨테이너 사용.
+- gRPC 테스트: grpc-testing으로 서비스간 호출 검증.
+- 에러 케이스 반드시 포함: NOT_FOUND, ALREADY_EXISTS, PERMISSION_DENIED 등.
 
 ## Frontend 테스트 규칙
 
@@ -37,8 +38,11 @@
 ## 테스트 실행
 
 ```bash
-# Backend
-cd backend && npm test
+# Backend (전체)
+./gradlew test
+
+# Backend (서비스별)
+./gradlew :services:walks:test
 
 # Frontend (Expo 설정 후)
 cd frontend && npm test

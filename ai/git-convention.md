@@ -19,14 +19,14 @@ main
 ```
 
 타입: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`
-스코프: `auth`, `users`, `dogs`, `walks`, `greetings`, `reports`, `walk-patterns`, `app`, `prisma`
+스코프: `identity`, `pet-profile`, `walks`, `social`, `notification`, `gateway`, `proto`, `app`
 
 예시:
 ```
-feat(dogs): 개 프로필 CRUD 엔드포인트 추가
+feat(pet-profile): 개 프로필 CRUD gRPC 서비스 추가
 fix(walks): 적도 부근 grid snap 계산 오류 수정
-test(greetings): 인사 만료 엣지 케이스 테스트 추가
-chore(prisma): walks 테이블 마이그레이션 추가
+test(social): 인사 만료 엣지 케이스 테스트 추가
+chore(walks): walks 테이블 Flyway 마이그레이션 추가
 ```
 
 ## 커밋 전 필수 확인
@@ -34,8 +34,11 @@ chore(prisma): walks 테이블 마이그레이션 추가
 커밋 전에 반드시 관련 테스트를 실행하여 정상 동작을 확인할 것.
 
 ```bash
-# Backend
-cd backend && npm test
+# Backend (전체)
+./gradlew test
+
+# Backend (서비스별)
+./gradlew :services:walks:test
 
 # Frontend
 cd frontend && npm test
@@ -49,4 +52,4 @@ cd frontend && npm test
 
 - 한 논리적 변경당 한 커밋
 - 커밋 메시지는 한국어
-- Prisma 마이그레이션은 별도 커밋: `chore(prisma): <테이블명> 마이그레이션 추가`
+- Flyway 마이그레이션은 별도 커밋: `chore(<service>): <테이블명> Flyway 마이그레이션 추가`
