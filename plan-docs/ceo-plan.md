@@ -21,8 +21,9 @@ Status: CLEARED (CEO + ENG + DESIGN all passed)
 
 ## 기술 스택 (Eng Review에서 확정)
 
-Expo (React Native) + NestJS + Prisma + Supabase (DB+Storage) + FCM
+Expo (React Native) + Kotlin + Spring Boot 3.5 (MSA) + JPA + Flyway + Supabase (DB+Storage) + gRPC + Kafka + FCM
 - 원안 웹 → 앱으로 변경 (푸시 알림 필수)
+- NestJS 모놀리스 → Kotlin MSA 전환 (ADR-010)
 - 상세: [eng-review.md](eng-review.md) 참고
 
 ## Phased Feature List

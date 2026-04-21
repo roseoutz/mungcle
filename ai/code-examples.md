@@ -2,130 +2,111 @@
 
 새 모듈/컴포넌트를 만들 때 이 패턴을 따를 것. 구현이 시작되면 실제 코드 파일을 참조 예시로 추가.
 
-## Backend: 새 모듈 만들기 (클린 아키텍처)
+## Backend: 새 모듈 만들기 (클린 아키텍처, Kotlin + Spring Boot)
 
 ### 도메인 모델
-```typescript
-// dogs/domain/models/dog.model.ts
-export enum DogSize { SMALL = 'SMALL', MEDIUM = 'MEDIUM', LARGE = 'LARGE' }
-export enum Temperament { ACTIVE = 'ACTIVE', CALM = 'CALM', CAUTION = 'CAUTION' }
+```kotlin
+// domain/model/Dog.kt
+enum class DogSize { SMALL, MEDIUM, LARGE }
+enum class Temperament { ACTIVE, CALM, CAUTION }
 
-export class Dog {
-  constructor(
-    public readonly id: string,
-    public readonly userId: string,
-    public readonly name: string,
-    public readonly breed: string,
-    public readonly size: DogSize,
-    public readonly temperament: Temperament,
-    public readonly sociabilityScore: number,
-    public readonly photoUrl: string | null,
-  ) {}
-}
+data class Dog(
+    val id: Long,
+    val userId: Long,
+    val name: String,
+    val breed: String,
+    val size: DogSize,
+    val temperament: Temperament,
+    val sociabilityScore: Int,
+    val photoUrl: String?,
+)
 ```
 
 ### 포트 (인터페이스)
-```typescript
-// dogs/domain/ports/out/dog-repository.port.ts
-export interface DogRepositoryPort {
-  save(dog: Dog): Promise<Dog>;
-  findById(id: string): Promise<Dog | null>;
-  findByUserId(userId: string): Promise<Dog[]>;
+```kotlin
+// domain/port/out/DogRepositoryPort.kt
+interface DogRepositoryPort {
+    fun save(dog: Dog): Dog
+    fun findById(id: Long): Dog?
+    fun findByUserId(userId: Long): List<Dog>
 }
 
-// dogs/domain/ports/in/create-dog.usecase.ts
-export interface CreateDogUseCase {
-  execute(command: CreateDogCommand): Promise<Dog>;
+// domain/port/in/CreateDogUseCase.kt
+interface CreateDogUseCase {
+    fun execute(command: CreateDogCommand): Dog
 }
 ```
 
 ### 유스케이스
-```typescript
-// dogs/application/commands/create-dog.handler.ts
-@Injectable()
-export class CreateDogCommandHandler implements CreateDogUseCase {
-  constructor(
-    @Inject('DogRepositoryPort')
-    private readonly dogRepo: DogRepositoryPort,
-  ) {}
+```kotlin
+// application/command/CreateDogCommandHandler.kt
+@Service
+class CreateDogCommandHandler(
+    private val dogRepo: DogRepositoryPort,
+) : CreateDogUseCase {
 
-  async execute(command: CreateDogCommand): Promise<Dog> {
-    const dog = new Dog(
-      generateId(),
-      command.userId,
-      command.name,
-      command.breed,
-      command.size,
-      command.temperament,
-      command.sociabilityScore,
-      null,
-    );
-    return this.dogRepo.save(dog);
-  }
+    @Transactional
+    override fun execute(command: CreateDogCommand): Dog {
+        val dog = Dog(
+            id = 0, // TSID 자동 할당
+            userId = command.userId,
+            name = command.name,
+            breed = command.breed,
+            size = command.size,
+            temperament = command.temperament,
+            sociabilityScore = command.sociabilityScore,
+            photoUrl = null,
+        )
+        return dogRepo.save(dog)
+    }
 }
 ```
 
-### 인프라 (Prisma 어댑터)
-```typescript
-// dogs/infrastructure/persistence/dog.repository.ts
-@Injectable()
-export class DogPrismaRepository implements DogRepositoryPort {
-  constructor(private readonly prisma: PrismaService) {}
+### 인프라 (JPA 어댑터)
+```kotlin
+// infrastructure/persistence/DogJpaRepository.kt
+@Repository
+class DogJpaRepositoryAdapter(
+    private val jpaRepository: DogSpringDataRepository,
+) : DogRepositoryPort {
 
-  async findById(id: string): Promise<Dog | null> {
-    const record = await this.prisma.dog.findUnique({
-      where: { id },
-      include: { user: true },  // N+1 방지
-    });
-    return record ? DogMapper.toDomain(record) : null;
-  }
+    @EntityGraph(attributePaths = ["owner"]) // N+1 방지
+    override fun findById(id: Long): Dog? {
+        return jpaRepository.findById(id)
+            .map { DogMapper.toDomain(it) }
+            .orElse(null)
+    }
 
-  async save(dog: Dog): Promise<Dog> {
-    const record = await this.prisma.dog.create({
-      data: DogMapper.toPrisma(dog),
-    });
-    return DogMapper.toDomain(record);
-  }
+    override fun save(dog: Dog): Dog {
+        val entity = DogMapper.toEntity(dog)
+        return DogMapper.toDomain(jpaRepository.save(entity))
+    }
 }
 ```
 
-### 컨트롤러
-```typescript
-// dogs/presentation/dogs.controller.ts
-@Controller('dogs')
-@UseGuards(JwtAuthGuard)
-export class DogsController {
-  constructor(
-    @Inject('CreateDogUseCase')
-    private readonly createDog: CreateDogUseCase,
-  ) {}
+### gRPC 서버 구현
+```kotlin
+// infrastructure/grpc/server/PetProfileGrpcService.kt
+@GrpcService
+class PetProfileGrpcService(
+    private val createDog: CreateDogUseCase,
+) : PetProfileServiceGrpcKt.PetProfileServiceCoroutineImplBase() {
 
-  @Post()
-  async create(
-    @Body() dto: CreateDogRequest,
-    @CurrentUser() user: UserPayload,
-  ): Promise<DogResponse> {
-    const dog = await this.createDog.execute({
-      userId: user.id,
-      ...dto,
-    });
-    return DogResponse.from(dog);
-  }
+    override suspend fun createDog(request: CreateDogRequest): CreateDogResponse {
+        val dog = createDog.execute(request.toCommand())
+        return dog.toProto()
+    }
 }
 ```
 
-### 모듈 와이어링
-```typescript
-// dogs/dogs.module.ts
-@Module({
-  controllers: [DogsController],
-  providers: [
-    { provide: 'CreateDogUseCase', useClass: CreateDogCommandHandler },
-    { provide: 'DogRepositoryPort', useClass: DogPrismaRepository },
-  ],
-  exports: ['DogRepositoryPort'],
-})
-export class DogsModule {}
+### Spring 설정 (Bean 와이어링)
+```kotlin
+// config/PetProfileConfig.kt
+@Configuration
+class PetProfileConfig {
+    // Spring의 @Service, @Repository 자동 스캔으로 와이어링
+    // 필요 시 수동 Bean 등록
+}
 ```
 
 ## Frontend: 새 Feature 만들기
@@ -202,4 +183,4 @@ export default HomeScreen;
 ---
 
 > 구현 시작 후 실제 코드가 생기면, "이 파일을 참고하라"는 식으로 업데이트할 것.
-> 예: "새 모듈은 `backend/src/dogs/`의 구조를 따를 것"
+> 예: "새 모듈은 `services/pet-profile/`의 구조를 따를 것"

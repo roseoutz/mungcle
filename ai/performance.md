@@ -12,7 +12,7 @@
 ## DB 쿼리 규칙
 
 - 모든 목록 API는 페이지네이션 필수: `?page=1&limit=20` (기본 20, 최대 50)
-- Prisma `findMany`에 반드시 `include`로 관련 데이터 로드 (N+1 방지)
+- JPA 목록 조회에 반드시 `@EntityGraph` 또는 `JOIN FETCH`로 관련 데이터 로드 (N+1 방지)
 - nearby 쿼리: `walks (gridCell, status, updatedAt)` 복합 인덱스
 - 인사 중복 방지: `greetings (senderId, receiverId)` unique 인덱스
 
@@ -25,5 +25,5 @@
 
 ## CRON
 
-- 산책 자동 만료: 1분 간격 (`@Interval(60000)`)
+- 산책 자동 만료: 1분 간격 (`@Scheduled(fixedRate = 60_000)`)
 - 시간대 패턴 집계: MVP에서는 실시간 쿼리. 데이터 쌓이면 사전 집계 테이블로 전환.
