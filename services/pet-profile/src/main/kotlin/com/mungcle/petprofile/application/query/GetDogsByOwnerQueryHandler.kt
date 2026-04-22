@@ -10,6 +10,6 @@ class GetDogsByOwnerQueryHandler(
     private val dogRepository: DogRepositoryPort,
 ) : GetDogsByOwnerUseCase {
 
-    override suspend fun execute(ownerId: Long): List<Dog> =
+    override fun execute(ownerId: Long): List<Dog> =
         dogRepository.findByOwnerId(ownerId)
 }

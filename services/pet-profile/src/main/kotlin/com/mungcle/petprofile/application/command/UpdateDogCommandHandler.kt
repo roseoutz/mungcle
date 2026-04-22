@@ -13,7 +13,7 @@ class UpdateDogCommandHandler(
 ) : UpdateDogUseCase {
 
     @Transactional
-    override suspend fun execute(command: UpdateDogUseCase.Command): Dog {
+    override fun execute(command: UpdateDogUseCase.Command): Dog {
         val dog = dogRepository.findById(command.dogId)
             ?: throw DogNotFoundException(command.dogId)
 

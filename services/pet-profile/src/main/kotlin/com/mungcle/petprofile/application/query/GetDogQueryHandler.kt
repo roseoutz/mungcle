@@ -11,6 +11,6 @@ class GetDogQueryHandler(
     private val dogRepository: DogRepositoryPort,
 ) : GetDogUseCase {
 
-    override suspend fun execute(dogId: Long): Dog =
+    override fun execute(dogId: Long): Dog =
         dogRepository.findById(dogId) ?: throw DogNotFoundException(dogId)
 }

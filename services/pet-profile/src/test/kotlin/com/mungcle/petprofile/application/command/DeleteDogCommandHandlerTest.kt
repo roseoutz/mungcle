@@ -6,11 +6,10 @@ import com.mungcle.petprofile.domain.model.Dog
 import com.mungcle.petprofile.domain.model.DogSize
 import com.mungcle.petprofile.domain.model.Temperament
 import com.mungcle.petprofile.domain.port.out.DogRepositoryPort
-import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.test.runTest
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -31,20 +30,20 @@ class DeleteDogCommandHandlerTest {
     )
 
     @Test
-    fun `정상 소프트 삭제`() = runTest {
-        coEvery { dogRepository.findById(100L) } returns existingDog
+    fun `정상 소프트 삭제`() {
+        every { dogRepository.findById(100L) } returns existingDog
         val dogSlot = slot<Dog>()
-        coEvery { dogRepository.save(capture(dogSlot)) } answers { dogSlot.captured }
+        every { dogRepository.save(capture(dogSlot)) } answers { dogSlot.captured }
 
         handler.execute(100L, 1L)
 
         assertNotNull(dogSlot.captured.deletedAt)
-        coVerify(exactly = 1) { dogRepository.save(any()) }
+        verify(exactly = 1) { dogRepository.save(any()) }
     }
 
     @Test
-    fun `존재하지 않는 반려견이면 예외`() = runTest {
-        coEvery { dogRepository.findById(999L) } returns null
+    fun `존재하지 않는 반려견이면 예외`() {
+        every { dogRepository.findById(999L) } returns null
 
         assertThrows<DogNotFoundException> {
             handler.execute(999L, 1L)
@@ -52,8 +51,8 @@ class DeleteDogCommandHandlerTest {
     }
 
     @Test
-    fun `소유자가 아니면 예외`() = runTest {
-        coEvery { dogRepository.findById(100L) } returns existingDog
+    fun `소유자가 아니면 예외`() {
+        every { dogRepository.findById(100L) } returns existingDog
 
         assertThrows<DogNotOwnedException> {
             handler.execute(100L, 999L)

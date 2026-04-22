@@ -3,5 +3,5 @@ package com.mungcle.petprofile.domain.port.`in`
 import com.mungcle.petprofile.domain.model.Dog
 
 interface GetDogsByOwnerUseCase {
-    suspend fun execute(ownerId: Long): List<Dog>
+    fun execute(ownerId: Long): List<Dog>
 }

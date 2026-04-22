@@ -1,5 +1,7 @@
 package com.mungcle.petprofile.infrastructure.grpc.server
 
+import com.mungcle.petprofile.domain.exception.PetProfileException
+import com.mungcle.petprofile.domain.exception.toStatusException
 import com.mungcle.petprofile.domain.model.Dog
 import com.mungcle.petprofile.domain.model.DogSize
 import com.mungcle.petprofile.domain.model.Temperament
@@ -35,62 +37,86 @@ class PetProfileGrpcService(
 ) : PetProfileServiceGrpcKt.PetProfileServiceCoroutineImplBase() {
 
     override suspend fun createDog(request: CreateDogRequest): DogInfo {
-        val dog = createDogUseCase.execute(
-            CreateDogUseCase.Command(
-                ownerId = request.ownerId,
-                name = request.name,
-                breed = request.breed,
-                size = mapDogSize(request.size),
-                temperaments = request.temperamentsList.map { Temperament.valueOf(it) },
-                sociability = request.sociability,
-                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
+        try {
+            val dog = createDogUseCase.execute(
+                CreateDogUseCase.Command(
+                    ownerId = request.ownerId,
+                    name = request.name,
+                    breed = request.breed,
+                    size = mapDogSize(request.size),
+                    temperaments = request.temperamentsList.map { Temperament.valueOf(it) },
+                    sociability = request.sociability,
+                    photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                    vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
+                )
             )
-        )
-        return dog.toDogInfo()
+            return dog.toDogInfo()
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun getDog(request: GetDogRequest): DogInfo {
-        val dog = getDogUseCase.execute(request.dogId)
-        return dog.toDogInfo()
+        try {
+            val dog = getDogUseCase.execute(request.dogId)
+            return dog.toDogInfo()
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun getDogsByOwner(request: GetDogsByOwnerRequest): GetDogsResponse {
-        val dogs = getDogsByOwnerUseCase.execute(request.ownerId)
-        return getDogsResponse {
-            this.dogs += dogs.map { it.toDogInfo() }
+        try {
+            val dogs = getDogsByOwnerUseCase.execute(request.ownerId)
+            return getDogsResponse {
+                this.dogs += dogs.map { it.toDogInfo() }
+            }
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
         }
     }
 
     override suspend fun getDogsByIds(request: GetDogsByIdsRequest): GetDogsResponse {
-        val dogs = getDogsByIdsUseCase.execute(request.dogIdsList)
-        return getDogsResponse {
-            this.dogs += dogs.map { it.toDogInfo() }
+        try {
+            val dogs = getDogsByIdsUseCase.execute(request.dogIdsList)
+            return getDogsResponse {
+                this.dogs += dogs.map { it.toDogInfo() }
+            }
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
         }
     }
 
     override suspend fun updateDog(request: UpdateDogRequest): DogInfo {
-        val dog = updateDogUseCase.execute(
-            UpdateDogUseCase.Command(
-                dogId = request.dogId,
-                requesterId = request.requesterId,
-                name = if (request.hasName()) request.name else null,
-                breed = if (request.hasBreed()) request.breed else null,
-                size = if (request.hasSize()) mapDogSize(request.size) else null,
-                temperaments = if (request.temperamentsList.isNotEmpty()) {
-                    request.temperamentsList.map { Temperament.valueOf(it) }
-                } else null,
-                sociability = if (request.hasSociability()) request.sociability else null,
-                photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
-                vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
+        try {
+            val dog = updateDogUseCase.execute(
+                UpdateDogUseCase.Command(
+                    dogId = request.dogId,
+                    requesterId = request.requesterId,
+                    name = if (request.hasName()) request.name else null,
+                    breed = if (request.hasBreed()) request.breed else null,
+                    size = if (request.hasSize()) mapDogSize(request.size) else null,
+                    temperaments = if (request.temperamentsList.isNotEmpty()) {
+                        request.temperamentsList.map { Temperament.valueOf(it) }
+                    } else null,
+                    sociability = if (request.hasSociability()) request.sociability else null,
+                    photoPath = if (request.hasPhotoPath()) request.photoPath.ifBlank { null } else null,
+                    vaccinationPhotoPath = if (request.hasVaccinationPhotoPath()) request.vaccinationPhotoPath.ifBlank { null } else null,
+                )
             )
-        )
-        return dog.toDogInfo()
+            return dog.toDogInfo()
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun deleteDog(request: DeleteDogRequest): DeleteDogResponse {
-        deleteDogUseCase.execute(request.dogId, request.requesterId)
-        return deleteDogResponse { }
+        try {
+            deleteDogUseCase.execute(request.dogId, request.requesterId)
+            return deleteDogResponse { }
+        } catch (e: PetProfileException) {
+            throw e.toStatusException()
+        }
     }
 
     private fun Dog.toDogInfo(): DogInfo = dogInfo {

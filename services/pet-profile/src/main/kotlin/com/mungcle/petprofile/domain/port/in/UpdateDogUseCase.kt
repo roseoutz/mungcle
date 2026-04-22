@@ -17,5 +17,5 @@ interface UpdateDogUseCase {
         val vaccinationPhotoPath: String? = null,
     )
 
-    suspend fun execute(command: Command): Dog
+    fun execute(command: Command): Dog
 }

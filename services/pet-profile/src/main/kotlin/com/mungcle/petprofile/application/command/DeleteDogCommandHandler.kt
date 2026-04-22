@@ -12,7 +12,7 @@ class DeleteDogCommandHandler(
 ) : DeleteDogUseCase {
 
     @Transactional
-    override suspend fun execute(dogId: Long, requesterId: Long) {
+    override fun execute(dogId: Long, requesterId: Long) {
         val dog = dogRepository.findById(dogId)
             ?: throw DogNotFoundException(dogId)
 

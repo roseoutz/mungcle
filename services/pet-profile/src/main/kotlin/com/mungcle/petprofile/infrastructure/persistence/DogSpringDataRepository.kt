@@ -6,4 +6,5 @@ interface DogSpringDataRepository : JpaRepository<DogEntity, Long> {
     fun findByOwnerIdAndDeletedAtIsNull(ownerId: Long): List<DogEntity>
     fun findByIdInAndDeletedAtIsNull(ids: List<Long>): List<DogEntity>
     fun findByIdAndDeletedAtIsNull(id: Long): DogEntity?
+    fun countByOwnerIdAndDeletedAtIsNull(ownerId: Long): Long
 }
