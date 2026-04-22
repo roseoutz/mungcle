@@ -76,12 +76,19 @@ class GreetingTest {
     }
 
     @Test
-    fun `expire — PENDING이 아니면 GreetingNotPendingException`() {
-        val accepted = pendingGreeting().accept(Instant.now())
+    fun `expire — EXPIRED 상태이면 GreetingNotPendingException`() {
+        val expired = pendingGreeting().expire()
 
         assertThrows<GreetingNotPendingException> {
-            accepted.expire()
+            expired.expire()
         }
+    }
+
+    @Test
+    fun `expire — ACCEPTED 상태에서도 EXPIRED로 전이`() {
+        val accepted = pendingGreeting().accept(Instant.now())
+        val expired = accepted.expire()
+        assertEquals(GreetingStatus.EXPIRED, expired.status)
     }
 
     @Test
@@ -96,5 +103,25 @@ class GreetingTest {
         val future = Instant.now().plusSeconds(300)
         val greeting = pendingGreeting(expiresAt = future)
         assertFalse(greeting.isExpired(Instant.now()))
+    }
+
+    @Test
+    fun `canSendMessage — ACCEPTED이고 미만료이면 true`() {
+        val now = Instant.now()
+        val accepted = pendingGreeting(expiresAt = now.plusSeconds(1800)).accept(now)
+        assertTrue(accepted.canSendMessage(now.plusSeconds(60)))
+    }
+
+    @Test
+    fun `canSendMessage — ACCEPTED이지만 만료이면 false`() {
+        val now = Instant.now()
+        val accepted = pendingGreeting(expiresAt = now.plusSeconds(1800)).accept(now)
+        assertFalse(accepted.canSendMessage(now.plusSeconds(1801)))
+    }
+
+    @Test
+    fun `canSendMessage — PENDING이면 false`() {
+        val greeting = pendingGreeting()
+        assertFalse(greeting.canSendMessage(Instant.now()))
     }
 }

@@ -25,9 +25,11 @@ data class Greeting(
     }
 
     fun expire(): Greeting {
-        if (status != GreetingStatus.PENDING) throw GreetingNotPendingException(id)
+        if (status != GreetingStatus.PENDING && status != GreetingStatus.ACCEPTED) throw GreetingNotPendingException(id)
         return copy(status = GreetingStatus.EXPIRED)
     }
+
+    fun canSendMessage(now: Instant): Boolean = status == GreetingStatus.ACCEPTED && now.isBefore(expiresAt)
 
     fun isPending(): Boolean = status == GreetingStatus.PENDING
 

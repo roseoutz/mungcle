@@ -16,3 +16,7 @@ class ForbiddenBlockedException(userId: Long) : SocialException("User $userId is
 class SelfGreetingException(userId: Long) : SocialException("User $userId cannot greet themselves")
 
 class GreetingAccessDeniedException(id: Long) : SocialException("Access denied to greeting $id")
+
+class GreetingNotAcceptedException(id: Long) : SocialException("Greeting $id is not accepted or has expired")
+
+class MessageTooLongException(length: Int) : SocialException("Message length $length exceeds limit of 140 characters")
