@@ -6,6 +6,7 @@ import com.mungcle.walks.domain.port.`in`.GetMyActiveWalksUseCase
 import com.mungcle.walks.domain.port.`in`.GetNearbyPatternsUseCase
 import com.mungcle.walks.domain.port.`in`.GetNearbyWalksUseCase
 import com.mungcle.walks.domain.port.`in`.GetWalkGridCellUseCase
+import com.mungcle.walks.domain.port.`in`.GetWalkUseCase
 import com.mungcle.walks.domain.port.`in`.StartWalkUseCase
 import com.mungcle.walks.domain.port.`in`.StopWalkUseCase
 import com.mungcle.proto.walks.v1.GetMyActiveWalksRequest
@@ -16,6 +17,7 @@ import com.mungcle.proto.walks.v1.GetNearbyWalksRequest
 import com.mungcle.proto.walks.v1.GetNearbyWalksResponse
 import com.mungcle.proto.walks.v1.GetWalkGridCellRequest
 import com.mungcle.proto.walks.v1.GetWalkGridCellResponse
+import com.mungcle.proto.walks.v1.GetWalkRequest
 import com.mungcle.proto.walks.v1.StartWalkRequest
 import com.mungcle.proto.walks.v1.StopWalkRequest
 import com.mungcle.proto.walks.v1.WalkInfo
@@ -36,6 +38,7 @@ import net.devh.boot.grpc.server.service.GrpcService
 class WalksGrpcService(
     private val startWalkUseCase: StartWalkUseCase,
     private val stopWalkUseCase: StopWalkUseCase,
+    private val getWalkUseCase: GetWalkUseCase,
     private val getNearbyWalksUseCase: GetNearbyWalksUseCase,
     private val getMyActiveWalksUseCase: GetMyActiveWalksUseCase,
     private val getWalkGridCellUseCase: GetWalkGridCellUseCase,
@@ -74,6 +77,15 @@ class WalksGrpcService(
                     userId = request.userId,
                 )
             )
+            return walk.toWalkInfo()
+        } catch (e: WalkException) {
+            throw e.toStatusException()
+        }
+    }
+
+    override suspend fun getWalk(request: GetWalkRequest): WalkInfo {
+        try {
+            val walk = getWalkUseCase.execute(request.walkId)
             return walk.toWalkInfo()
         } catch (e: WalkException) {
             throw e.toStatusException()

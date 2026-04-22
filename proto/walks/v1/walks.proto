@@ -8,10 +8,15 @@ option java_package = "com.mungcle.proto.walks.v1";
 service WalksService {
   rpc StartWalk(StartWalkRequest) returns (WalkInfo);
   rpc StopWalk(StopWalkRequest) returns (WalkInfo);
+  rpc GetWalk(GetWalkRequest) returns (WalkInfo);
   rpc GetNearbyWalks(GetNearbyWalksRequest) returns (GetNearbyWalksResponse);
   rpc GetMyActiveWalks(GetMyActiveWalksRequest) returns (GetMyActiveWalksResponse);
   rpc GetWalkGridCell(GetWalkGridCellRequest) returns (GetWalkGridCellResponse);
   rpc GetNearbyPatterns(GetNearbyPatternsRequest) returns (GetNearbyPatternsResponse);
+}
+
+message GetWalkRequest {
+  int64 walk_id = 1;
 }
 
 message StartWalkRequest {
