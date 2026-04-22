@@ -31,6 +31,7 @@ include("common:kafka-common")
 include("common:grpc-client")
 
 // Services
+include("services:api-gateway")
 include("services:pet-profile")
 include("services:walks")
 include("services:social")
