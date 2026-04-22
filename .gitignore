@@ -37,6 +37,7 @@ Thumbs.db
 # AI tools state
 .omc/
 .claude/settings.local.json
+.claude/worktrees/
 
 # Proto generated code
 common/grpc-client/src/main/java/
