@@ -3,6 +3,7 @@ package com.mungcle.walks.infrastructure.persistence
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.Instant
 import java.util.Optional
 
 interface WalkSpringDataRepository : JpaRepository<WalkEntity, Long> {
@@ -15,4 +16,7 @@ interface WalkSpringDataRepository : JpaRepository<WalkEntity, Long> {
 
     @Query("SELECT w FROM WalkEntity w WHERE w.gridCell IN :gridCells AND w.status = 'ACTIVE' AND w.type = 'OPEN'")
     fun findActiveOpenByGridCells(@Param("gridCells") gridCells: List<String>): List<WalkEntity>
+
+    @Query("SELECT w FROM WalkEntity w WHERE w.status = 'ACTIVE' AND w.endsAt < :now")
+    fun findByStatusAndEndsAtBefore(@Param("now") now: Instant): List<WalkEntity>
 }
