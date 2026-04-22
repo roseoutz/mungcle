@@ -33,3 +33,4 @@ include("common:grpc-client")
 // Services
 include("services:pet-profile")
 include("services:walks")
+include("services:social")
