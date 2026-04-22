@@ -10,7 +10,9 @@ import com.mungcle.proto.identity.v1.createBlockRequest
 import com.mungcle.proto.identity.v1.createReportRequest
 import com.mungcle.proto.identity.v1.deleteBlockRequest
 import com.mungcle.proto.identity.v1.deleteUserRequest
+import com.mungcle.proto.identity.v1.getBlockedUserIdsRequest
 import com.mungcle.proto.identity.v1.getUserRequest
+import com.mungcle.proto.identity.v1.getUsersByIdsRequest
 import com.mungcle.proto.identity.v1.listBlocksRequest
 import com.mungcle.proto.identity.v1.loginEmailRequest
 import com.mungcle.proto.identity.v1.registerEmailRequest
@@ -105,4 +107,14 @@ class IdentityClient(
             this.reason = reason
         })
     }
+
+    suspend fun getBlockedUserIds(userId: Long): List<Long> =
+        stub.getBlockedUserIds(getBlockedUserIdsRequest {
+            this.userId = userId
+        }).blockedUserIdsList
+
+    suspend fun getUsersByIds(userIds: List<Long>): List<UserInfo> =
+        stub.getUsersByIds(getUsersByIdsRequest {
+            this.userIds += userIds
+        }).usersList
 }
