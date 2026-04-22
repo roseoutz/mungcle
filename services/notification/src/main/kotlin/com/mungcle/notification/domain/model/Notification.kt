@@ -30,10 +30,12 @@ class Notification(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Notification) return false
+        // 미저장 엔티티(id=0)는 참조 동일성만 허용
+        if (id == 0L) return false
         return id == other.id
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int = if (id != 0L) id.hashCode() else System.identityHashCode(this)
 
     override fun toString(): String =
         "Notification(id=$id, userId=$userId, type=$type, read=$read, createdAt=$createdAt)"

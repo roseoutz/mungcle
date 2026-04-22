@@ -51,10 +51,12 @@ class Greeting(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Greeting) return false
+        // 미저장 엔티티(id=0)는 참조 동일성만 허용
+        if (id == 0L) return false
         return id == other.id
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int = if (id != 0L) id.hashCode() else System.identityHashCode(this)
 
     override fun toString(): String =
         "Greeting(id=$id, senderUserId=$senderUserId, receiverUserId=$receiverUserId, status=$status)"

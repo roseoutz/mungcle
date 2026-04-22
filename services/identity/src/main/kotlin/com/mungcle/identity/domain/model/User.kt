@@ -81,6 +81,7 @@ class User(
         this.email = "deleted_${id}@"
         this.socialProvider = null
         this.socialId = null
+        // 닉네임 유효성 검증을 의도적으로 우회 — 익명화 값 "탈퇴한 사용자"는 공백 포함
         this.nickname = "탈퇴한 사용자"
         this.deletedAt = Instant.now()
         return this
@@ -89,10 +90,12 @@ class User(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is User) return false
+        // 미저장 엔티티(id=0)는 참조 동일성만 허용
+        if (id == 0L) return false
         return id == other.id
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int = if (id != 0L) id.hashCode() else System.identityHashCode(this)
 
     override fun toString(): String =
         "User(id=$id, nickname=$nickname, email=$email, flaggedForReview=$flaggedForReview, deletedAt=$deletedAt)"
