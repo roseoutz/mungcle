@@ -1,19 +1,22 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { NotificationList } from '../src/features/notifications/components/NotificationList';
-import * as notificationsApi from '../src/features/notifications/services/notifications.api';
+import type { NotificationListProps } from '../src/features/notifications/components/NotificationList';
 
 // expo-router mock
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-// API mock
-jest.mock('../src/features/notifications/services/notifications.api');
-
-const mockListNotifications = notificationsApi.listNotifications as jest.MockedFunction<
-  typeof notificationsApi.listNotifications
->;
+const baseProps: NotificationListProps = {
+  notifications: [],
+  loading: false,
+  error: null,
+  hasMore: false,
+  onRefresh: jest.fn(),
+  onLoadMore: jest.fn(),
+  onMarkRead: jest.fn(),
+};
 
 describe('NotificationList', () => {
   afterEach(() => {
@@ -21,71 +24,75 @@ describe('NotificationList', () => {
   });
 
   it('loading 상태: ActivityIndicator 표시', () => {
-    // 응답을 지연시켜 로딩 상태 유지
-    mockListNotifications.mockReturnValue(new Promise(() => {}));
-    const { getByLabelText } = render(<NotificationList />);
+    const { getByLabelText } = render(
+      <NotificationList {...baseProps} loading={true} />,
+    );
     expect(getByLabelText('불러오는 중')).toBeTruthy();
   });
 
-  it('error 상태: 에러 메시지 표시', async () => {
-    mockListNotifications.mockRejectedValue(new Error('네트워크 오류'));
-    const { findByText } = render(<NotificationList />);
-    expect(await findByText('연결할 수 없어요')).toBeTruthy();
+  it('error 상태: 에러 메시지 표시', () => {
+    const { getByText } = render(
+      <NotificationList {...baseProps} error="네트워크 오류" />,
+    );
+    expect(getByText('연결할 수 없어요')).toBeTruthy();
   });
 
-  it('empty 상태: 빈 메시지 표시', async () => {
-    mockListNotifications.mockResolvedValue({ notifications: [] });
-    const { findByText } = render(<NotificationList />);
-    expect(await findByText('아직 인사가 없어요')).toBeTruthy();
+  it('empty 상태: 빈 메시지 표시', () => {
+    const { getByText } = render(
+      <NotificationList {...baseProps} />,
+    );
+    expect(getByText('아직 인사가 없어요')).toBeTruthy();
   });
 
   it('success 상태: 알림 목록 렌더링', async () => {
-    mockListNotifications.mockResolvedValue({
-      notifications: [
-        {
-          id: 1,
-          userId: 10,
-          type: 'GREETING_RECEIVED',
-          payload: {},
-          read: false,
-          createdAt: Date.now() - 5000,
-        },
-        {
-          id: 2,
-          userId: 10,
-          type: 'MESSAGE_RECEIVED',
-          payload: { message: '산책 같이해요' },
-          read: true,
-          createdAt: Date.now() - 10000,
-        },
-      ],
-    });
+    const notifications = [
+      {
+        id: 1,
+        userId: 10,
+        type: 'GREETING_RECEIVED' as const,
+        payload: {},
+        read: false,
+        createdAt: Date.now() - 5000,
+      },
+      {
+        id: 2,
+        userId: 10,
+        type: 'MESSAGE_RECEIVED' as const,
+        payload: { message: '산책 같이해요' },
+        read: true,
+        createdAt: Date.now() - 10000,
+      },
+    ];
 
-    const { findByText } = render(<NotificationList />);
+    const { findByText } = render(
+      <NotificationList {...baseProps} notifications={notifications} />,
+    );
     expect(await findByText('인사 수신')).toBeTruthy();
     expect(await findByText('새 메시지')).toBeTruthy();
   });
 
-  it('success 상태: nextCursor 없으면 hasMore=false (loadMore 미호출)', async () => {
-    mockListNotifications.mockResolvedValue({
-      notifications: [
-        {
-          id: 1,
-          userId: 10,
-          type: 'GREETING_RECEIVED',
-          payload: {},
-          read: true,
-          createdAt: Date.now(),
-        },
-      ],
-      // nextCursor 없음
-    });
+  it('success 상태: hasMore=false 이면 onLoadMore prop 미전달', () => {
+    const notifications = [
+      {
+        id: 1,
+        userId: 10,
+        type: 'GREETING_RECEIVED' as const,
+        payload: {},
+        read: true,
+        createdAt: Date.now(),
+      },
+    ];
 
-    render(<NotificationList />);
-
-    await waitFor(() => {
-      // listNotifications는 초기 load 시 1회만 호출
-      expect(mockListNotifications).toHaveBeenCalledTimes(1);
-    });
+    const onLoadMore = jest.fn();
+    render(
+      <NotificationList
+        {...baseProps}
+        notifications={notifications}
+        hasMore={false}
+        onLoadMore={onLoadMore}
+      />,
+    );
+    // hasMore=false 이므로 onEndReached에 onLoadMore가 전달되지 않음 — 호출 없음
+    expect(onLoadMore).not.toHaveBeenCalled();
   });
 });
