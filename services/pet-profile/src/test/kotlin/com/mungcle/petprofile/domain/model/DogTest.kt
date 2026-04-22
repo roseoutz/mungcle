@@ -93,19 +93,31 @@ class DogTest {
 
     @Test
     fun `예방접종 사진 있으면 등록`() {
-        val dog = createDog().copy(vaccinationPhotoPath = "vaccinations/photo.jpg")
+        val dog = Dog(
+            id = 100L, ownerId = 1L, name = "초코", breed = "골든리트리버",
+            size = DogSize.LARGE, temperaments = listOf(Temperament.FRIENDLY),
+            sociability = 3, vaccinationPhotoPath = "vaccinations/photo.jpg",
+        )
         assertTrue(dog.isVaccinationRegistered())
     }
 
     @Test
     fun `예방접종 사진이 빈 문자열이면 미등록`() {
-        val dog = createDog().copy(vaccinationPhotoPath = "")
+        val dog = Dog(
+            id = 100L, ownerId = 1L, name = "초코", breed = "골든리트리버",
+            size = DogSize.LARGE, temperaments = listOf(Temperament.FRIENDLY),
+            sociability = 3, vaccinationPhotoPath = "",
+        )
         assertFalse(dog.isVaccinationRegistered())
     }
 
     @Test
     fun `예방접종 사진이 공백이면 미등록`() {
-        val dog = createDog().copy(vaccinationPhotoPath = "   ")
+        val dog = Dog(
+            id = 100L, ownerId = 1L, name = "초코", breed = "골든리트리버",
+            size = DogSize.LARGE, temperaments = listOf(Temperament.FRIENDLY),
+            sociability = 3, vaccinationPhotoPath = "   ",
+        )
         assertFalse(dog.isVaccinationRegistered())
     }
 
@@ -115,5 +127,54 @@ class DogTest {
         assertNull(dog.deletedAt)
         val deleted = dog.softDelete()
         assertNotNull(deleted.deletedAt)
+    }
+
+    @Test
+    fun `update - null 파라미터는 기존 값 유지`() {
+        val dog = createDog()
+        dog.update(name = "코코")
+        assertEquals("코코", dog.name)
+        assertEquals("골든리트리버", dog.breed)
+        assertEquals(DogSize.LARGE, dog.size)
+    }
+
+    @Test
+    fun `update - 전체 필드 변경`() {
+        val dog = createDog()
+        dog.update(
+            name = "코코",
+            breed = "포메라니안",
+            size = DogSize.SMALL,
+            temperaments = listOf(Temperament.CALM),
+            sociability = 5,
+            photoPath = "dogs/new.jpg",
+            vaccinationPhotoPath = "vaccinations/new.jpg",
+        )
+        assertEquals("코코", dog.name)
+        assertEquals("포메라니안", dog.breed)
+        assertEquals(DogSize.SMALL, dog.size)
+        assertEquals(listOf(Temperament.CALM), dog.temperaments)
+        assertEquals(5, dog.sociability)
+        assertEquals("dogs/new.jpg", dog.photoPath)
+        assertEquals("vaccinations/new.jpg", dog.vaccinationPhotoPath)
+    }
+
+    @Test
+    fun `update - 성향 4개이면 예외`() {
+        val dog = createDog()
+        assertThrows<InvalidTemperamentCountException> {
+            dog.update(temperaments = listOf(
+                Temperament.FRIENDLY, Temperament.CALM,
+                Temperament.ACTIVE, Temperament.CURIOUS,
+            ))
+        }
+    }
+
+    @Test
+    fun `update - 사교성 범위 초과이면 예외`() {
+        val dog = createDog()
+        assertThrows<IllegalArgumentException> {
+            dog.update(sociability = 6)
+        }
     }
 }

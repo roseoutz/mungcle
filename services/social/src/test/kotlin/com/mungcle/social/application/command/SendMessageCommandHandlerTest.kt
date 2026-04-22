@@ -53,7 +53,16 @@ class SendMessageCommandHandlerTest {
         val greeting = acceptedGreeting()
         every { greetingRepository.findById(1L) } returns greeting
         val slot = slot<Message>()
-        every { messageRepository.save(capture(slot)) } answers { slot.captured.copy(id = 100L) }
+        every { messageRepository.save(capture(slot)) } answers {
+            val m = slot.captured
+            Message(
+                id = 100L,
+                greetingId = m.greetingId,
+                senderUserId = m.senderUserId,
+                body = m.body,
+                createdAt = m.createdAt,
+            )
+        }
 
         val result = handler.execute(SendMessageUseCase.Command(1L, 10L, "안녕하세요"))
 

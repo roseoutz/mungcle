@@ -3,13 +3,16 @@
 ## 브랜치
 
 ```
-main
-  └── feature/MC-<번호>-<name>   # 새 기능
-  └── fix/MC-<번호>-<name>       # 버그 수정
-  └── refactor/MC-<번호>-<name>  # 리팩터링
+main            ← 관리자 승인 후 최종 머지 대상
+  └── develop   ← 모든 작업의 기본 base 브랜치
+        └── feature/MC-<번호>-<name>   # 새 기능
+        └── fix/MC-<번호>-<name>       # 버그 수정
+        └── refactor/MC-<번호>-<name>  # 리팩터링
 ```
 
-- main에 직접 푸시 금지. PR을 통해서만.
+- **`develop`이 모든 작업의 base 브랜치.** 브랜치 생성 시 반드시 `develop`에서 분기.
+- 기존 작업에서 파생된 작업만 해당 브랜치에서 분기 허용.
+- `main`에 직접 푸시 금지. `develop` → `main` 머지는 관리자 승인 후에만.
 - **브랜치 이름은 Notion 이슈 키를 프리픽스로 사용**: `<type>/MC-<번호>-<설명>`
 - 설명 부분은 영어, kebab-case
 - 예시: `feature/MC-40-rich-domain-model`, `fix/MC-12-grid-snap-boundary`

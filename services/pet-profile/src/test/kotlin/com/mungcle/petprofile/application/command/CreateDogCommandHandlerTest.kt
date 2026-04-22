@@ -32,7 +32,13 @@ class CreateDogCommandHandlerTest {
     fun `정상 반려견 등록`() {
         every { dogRepository.countByOwnerId(1L) } returns 0L
         val dogSlot = slot<Dog>()
-        every { dogRepository.save(capture(dogSlot)) } answers { dogSlot.captured.copy(id = 100L) }
+        every { dogRepository.save(capture(dogSlot)) } answers {
+            val d = dogSlot.captured
+            Dog(id = 100L, ownerId = d.ownerId, name = d.name, breed = d.breed,
+                size = d.size, temperaments = d.temperaments, sociability = d.sociability,
+                photoPath = d.photoPath, vaccinationPhotoPath = d.vaccinationPhotoPath,
+                createdAt = d.createdAt)
+        }
 
         val result = handler.execute(command)
 
@@ -53,7 +59,13 @@ class CreateDogCommandHandlerTest {
         )
         every { dogRepository.countByOwnerId(1L) } returns 0L
         val dogSlot = slot<Dog>()
-        every { dogRepository.save(capture(dogSlot)) } answers { dogSlot.captured.copy(id = 101L) }
+        every { dogRepository.save(capture(dogSlot)) } answers {
+            val d = dogSlot.captured
+            Dog(id = 101L, ownerId = d.ownerId, name = d.name, breed = d.breed,
+                size = d.size, temperaments = d.temperaments, sociability = d.sociability,
+                photoPath = d.photoPath, vaccinationPhotoPath = d.vaccinationPhotoPath,
+                createdAt = d.createdAt)
+        }
 
         val result = handler.execute(commandWithPhoto)
 
@@ -83,7 +95,13 @@ class CreateDogCommandHandlerTest {
     fun `4마리일 때 등록 가능`() {
         every { dogRepository.countByOwnerId(1L) } returns 4L
         val dogSlot = slot<Dog>()
-        every { dogRepository.save(capture(dogSlot)) } answers { dogSlot.captured.copy(id = 102L) }
+        every { dogRepository.save(capture(dogSlot)) } answers {
+            val d = dogSlot.captured
+            Dog(id = 102L, ownerId = d.ownerId, name = d.name, breed = d.breed,
+                size = d.size, temperaments = d.temperaments, sociability = d.sociability,
+                photoPath = d.photoPath, vaccinationPhotoPath = d.vaccinationPhotoPath,
+                createdAt = d.createdAt)
+        }
 
         val result = handler.execute(command)
 

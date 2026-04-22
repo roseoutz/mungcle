@@ -66,7 +66,16 @@ class StopWalkCommandHandlerTest {
 
     @Test
     fun `이미 종료된 산책은 WalkAlreadyEndedException`() {
-        val endedWalk = activeWalk.copy(status = WalkStatus.ENDED)
+        val endedWalk = Walk(
+            id = 1L,
+            dogId = 100L,
+            userId = 10L,
+            type = WalkType.OPEN,
+            gridCell = GridCell("10:20"),
+            status = WalkStatus.ENDED,
+            startedAt = now,
+            endsAt = now.plus(Duration.ofMinutes(60)),
+        )
         every { walkRepository.findById(1L) } returns endedWalk
 
         assertThrows<WalkAlreadyEndedException> {
