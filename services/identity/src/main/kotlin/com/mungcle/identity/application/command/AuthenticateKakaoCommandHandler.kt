@@ -1,34 +1,25 @@
 package com.mungcle.identity.application.command
 
 import com.mungcle.identity.application.dto.AuthResult
-import com.mungcle.identity.domain.model.User
+import com.mungcle.identity.domain.model.SocialProvider
 import com.mungcle.identity.domain.port.`in`.AuthenticateKakaoUseCase
-import com.mungcle.identity.domain.port.out.JwtPort
-import com.mungcle.identity.domain.port.out.KakaoApiPort
-import com.mungcle.identity.domain.port.out.UserRepositoryPort
+import com.mungcle.identity.domain.port.`in`.AuthenticateSocialUseCase
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
+/**
+ * 카카오 로그인 핸들러 — 하위 호환을 위해 유지.
+ * 내부적으로 AuthenticateSocialUseCase에 위임한다.
+ */
 @Service
 class AuthenticateKakaoCommandHandler(
-    private val userRepository: UserRepositoryPort,
-    private val jwtPort: JwtPort,
-    private val kakaoApiPort: KakaoApiPort,
+    private val authenticateSocial: AuthenticateSocialUseCase,
 ) : AuthenticateKakaoUseCase {
 
-    @Transactional
-    override suspend fun execute(command: AuthenticateKakaoUseCase.Command): AuthResult {
-        val kakaoId = kakaoApiPort.getUserId(command.kakaoAccessToken)
-
-        val user = userRepository.findByKakaoId(kakaoId)
-            ?: userRepository.save(
-                User(
-                    kakaoId = kakaoId,
-                    nickname = "카카오유저_${kakaoId.takeLast(6)}",
-                )
+    override suspend fun execute(command: AuthenticateKakaoUseCase.Command): AuthResult =
+        authenticateSocial.execute(
+            AuthenticateSocialUseCase.Command(
+                provider = SocialProvider.KAKAO,
+                accessToken = command.kakaoAccessToken,
             )
-
-        val token = jwtPort.generateToken(user.id)
-        return AuthResult(accessToken = token, user = user)
-    }
+        )
 }

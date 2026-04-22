@@ -1,5 +1,6 @@
 package com.mungcle.identity.infrastructure.persistence
 
+import com.mungcle.identity.domain.model.SocialProvider
 import com.mungcle.identity.domain.model.User
 import com.mungcle.identity.domain.port.out.UserRepositoryPort
 import org.springframework.stereotype.Repository
@@ -21,8 +22,9 @@ class UserRepositoryAdapter(
     override suspend fun findByEmail(email: String): User? =
         springDataRepository.findByEmail(email).orElse(null)?.let(UserMapper::toDomain)
 
-    override suspend fun findByKakaoId(kakaoId: String): User? =
-        springDataRepository.findByKakaoId(kakaoId).orElse(null)?.let(UserMapper::toDomain)
+    override suspend fun findBySocialProviderAndSocialId(provider: SocialProvider, socialId: String): User? =
+        springDataRepository.findBySocialProviderAndSocialIdAndDeletedAtIsNull(provider.name, socialId)
+            .orElse(null)?.let(UserMapper::toDomain)
 
     override suspend fun findByIds(ids: List<Long>): List<User> =
         springDataRepository.findByIdIn(ids).map(UserMapper::toDomain)

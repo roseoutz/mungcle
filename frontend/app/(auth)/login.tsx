@@ -3,11 +3,20 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../src/shared/components/Button';
+import { useAuth } from '../../src/features/auth/hooks/useAuth';
+import type { SocialProvider } from '../../src/features/auth/types/auth.types';
 import { colors, spacing } from '../../src/constants/theme';
 import { typography } from '../../src/constants/typography';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { socialLogin } = useAuth();
+
+  const handleSocialLogin = async (provider: SocialProvider) => {
+    // TODO: 각 프로바이더 SDK에서 액세스 토큰을 획득한 후 socialLogin 호출
+    // 예시: const token = await KakaoLogin.getAccessToken();
+    // await socialLogin(provider, token);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -17,16 +26,44 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.actions}>
-        {/* 카카오 로그인 — 추후 SDK 연동 */}
+        {/* 카카오 로그인 */}
         <Button
           variant="primary"
           size="lg"
           accessibilityLabel="카카오로 시작하기"
-          onPress={() => {
-            // TODO: 카카오 OAuth 연동
-          }}
+          onPress={() => handleSocialLogin('KAKAO')}
         >
           카카오로 시작하기
+        </Button>
+
+        {/* 네이버 로그인 */}
+        <Button
+          variant="primary"
+          size="lg"
+          accessibilityLabel="네이버로 시작하기"
+          onPress={() => handleSocialLogin('NAVER')}
+        >
+          네이버로 시작하기
+        </Button>
+
+        {/* 애플 로그인 */}
+        <Button
+          variant="primary"
+          size="lg"
+          accessibilityLabel="Apple로 시작하기"
+          onPress={() => handleSocialLogin('APPLE')}
+        >
+          Apple로 시작하기
+        </Button>
+
+        {/* 구글 로그인 */}
+        <Button
+          variant="primary"
+          size="lg"
+          accessibilityLabel="Google로 시작하기"
+          onPress={() => handleSocialLogin('GOOGLE')}
+        >
+          Google로 시작하기
         </Button>
 
         <Button

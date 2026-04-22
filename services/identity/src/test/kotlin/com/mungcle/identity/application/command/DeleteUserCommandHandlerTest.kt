@@ -22,7 +22,8 @@ class DeleteUserCommandHandlerTest {
     private val user = User(
         id = 1L,
         email = "test@example.com",
-        kakaoId = "kakao-123",
+        socialProvider = com.mungcle.identity.domain.model.SocialProvider.KAKAO,
+        socialId = "kakao-123",
         nickname = "testuser",
         createdAt = Instant.now(),
     )
@@ -40,14 +41,14 @@ class DeleteUserCommandHandlerTest {
     }
 
     @Test
-    fun `소프트 삭제 시 kakaoId null`() = runTest {
+    fun `소프트 삭제 시 socialId null`() = runTest {
         coEvery { userRepository.findById(1L) } returns user
         coEvery { userRepository.save(any()) } answers { firstArg() }
 
         handler.execute(1L)
 
         coVerify {
-            userRepository.save(match { it.kakaoId == null })
+            userRepository.save(match { it.socialId == null })
         }
     }
 

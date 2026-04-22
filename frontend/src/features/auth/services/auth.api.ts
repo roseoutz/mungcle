@@ -1,5 +1,5 @@
 import { apiClient } from '../../../shared/utils/api';
-import type { AuthResponse } from '../types/auth.types';
+import type { AuthResponse, SocialProvider } from '../types/auth.types';
 
 export async function loginEmail(email: string, password: string): Promise<AuthResponse> {
   return apiClient<AuthResponse>('/api/auth/email/login', {
@@ -20,8 +20,15 @@ export async function registerEmail(
 }
 
 export async function loginKakao(token: string): Promise<AuthResponse> {
-  return apiClient<AuthResponse>('/api/auth/kakao/login', {
+  return apiClient<AuthResponse>('/api/auth/kakao', {
     method: 'POST',
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ kakaoAccessToken: token }),
+  });
+}
+
+export async function loginSocial(provider: SocialProvider, accessToken: string): Promise<AuthResponse> {
+  return apiClient<AuthResponse>('/api/auth/social', {
+    method: 'POST',
+    body: JSON.stringify({ provider, accessToken }),
   });
 }

@@ -8,6 +8,11 @@ data class KakaoLoginRequest(
     @field:NotBlank val kakaoAccessToken: String,
 )
 
+data class SocialLoginRequest(
+    @field:NotBlank val provider: String,     // KAKAO, NAVER, APPLE, GOOGLE
+    @field:NotBlank val accessToken: String,
+)
+
 data class RegisterRequest(
     @field:Email @field:NotBlank val email: String,
     @field:Size(min = 8) val password: String,

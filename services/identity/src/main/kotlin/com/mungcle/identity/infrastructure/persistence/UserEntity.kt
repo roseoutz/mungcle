@@ -15,8 +15,11 @@ open class UserEntity(
     @Column(name = "id", nullable = false)
     open var id: Long = 0,
 
-    @Column(name = "kakao_id", unique = true)
-    open var kakaoId: String? = null,
+    @Column(name = "social_provider", length = 10)
+    open var socialProvider: String? = null,
+
+    @Column(name = "social_id")
+    open var socialId: String? = null,
 
     @Column(name = "email", unique = true)
     open var email: String? = null,

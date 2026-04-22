@@ -6,7 +6,12 @@ option java_multiple_files = true;
 option java_package = "com.mungcle.proto.identity.v1";
 
 service IdentityService {
+  // 기존 카카오 RPC 유지 (하위 호환)
   rpc AuthenticateKakao(AuthenticateKakaoRequest) returns (AuthResponse);
+
+  // 범용 소셜 인증 RPC
+  rpc AuthenticateSocial(AuthenticateSocialRequest) returns (AuthResponse);
+
   rpc RegisterEmail(RegisterEmailRequest) returns (AuthResponse);
   rpc LoginEmail(LoginEmailRequest) returns (AuthResponse);
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
@@ -27,8 +32,21 @@ service IdentityService {
 }
 
 // --- Auth ---
+enum SocialProvider {
+  SOCIAL_PROVIDER_UNSPECIFIED = 0;
+  SOCIAL_PROVIDER_KAKAO = 1;
+  SOCIAL_PROVIDER_NAVER = 2;
+  SOCIAL_PROVIDER_APPLE = 3;
+  SOCIAL_PROVIDER_GOOGLE = 4;
+}
+
 message AuthenticateKakaoRequest {
   string kakao_access_token = 1;
+}
+
+message AuthenticateSocialRequest {
+  SocialProvider provider = 1;
+  string access_token = 2;
 }
 
 message RegisterEmailRequest {

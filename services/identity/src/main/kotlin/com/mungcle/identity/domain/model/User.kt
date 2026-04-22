@@ -9,7 +9,8 @@ import java.time.Instant
  */
 data class User(
     val id: Long = 0,
-    val kakaoId: String? = null,
+    val socialProvider: SocialProvider? = null,
+    val socialId: String? = null,
     val email: String? = null,
     val passwordHash: String? = null,
     val nickname: String,
@@ -23,7 +24,7 @@ data class User(
     /** 회원 탈퇴 소프트 삭제 — 개인정보 익명화 */
     fun softDelete(): User = copy(
         email = "deleted_${id}@",
-        kakaoId = null,
+        socialId = null,
         nickname = "탈퇴한 사용자",
         deletedAt = Instant.now(),
     )

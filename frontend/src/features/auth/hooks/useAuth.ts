@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { loginEmail, loginKakao, registerEmail } from '../services/auth.api';
-import type { UserInfo } from '../types/auth.types';
+import { loginEmail, loginKakao, loginSocial, registerEmail } from '../services/auth.api';
+import type { SocialProvider, UserInfo } from '../types/auth.types';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -10,6 +10,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname: string) => Promise<void>;
   kakaoLogin: (token: string) => Promise<void>;
+  socialLogin: (provider: SocialProvider, token: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -58,6 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveSession(response.accessToken, response.user);
   }, [saveSession]);
 
+  const socialLogin = useCallback(async (provider: SocialProvider, token: string) => {
+    const response = await loginSocial(provider, token);
+    await saveSession(response.accessToken, response.user);
+  }, [saveSession]);
+
   const logout = useCallback(async () => {
     await SecureStore.deleteItemAsync('accessToken');
     await SecureStore.deleteItemAsync('user');
@@ -71,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     kakaoLogin,
+    socialLogin,
     logout,
   };
 

@@ -2,10 +2,12 @@ package com.mungcle.gateway.infrastructure.grpc
 
 import com.mungcle.proto.identity.v1.AuthResponse
 import com.mungcle.proto.identity.v1.IdentityServiceGrpcKt
+import com.mungcle.proto.identity.v1.SocialProvider as ProtoSocialProvider
 import com.mungcle.proto.identity.v1.ListBlocksResponse
 import com.mungcle.proto.identity.v1.UserInfo
 import com.mungcle.proto.identity.v1.ValidateTokenResponse
 import com.mungcle.proto.identity.v1.authenticateKakaoRequest
+import com.mungcle.proto.identity.v1.authenticateSocialRequest
 import com.mungcle.proto.identity.v1.createBlockRequest
 import com.mungcle.proto.identity.v1.createReportRequest
 import com.mungcle.proto.identity.v1.deleteBlockRequest
@@ -31,6 +33,20 @@ class IdentityClient(
         stub.authenticateKakao(authenticateKakaoRequest {
             this.kakaoAccessToken = kakaoAccessToken
         })
+
+    suspend fun authenticateSocial(provider: String, accessToken: String): AuthResponse {
+        val protoProvider = when (provider.uppercase()) {
+            "KAKAO" -> ProtoSocialProvider.SOCIAL_PROVIDER_KAKAO
+            "NAVER" -> ProtoSocialProvider.SOCIAL_PROVIDER_NAVER
+            "APPLE" -> ProtoSocialProvider.SOCIAL_PROVIDER_APPLE
+            "GOOGLE" -> ProtoSocialProvider.SOCIAL_PROVIDER_GOOGLE
+            else -> throw IllegalArgumentException("지원하지 않는 프로바이더: $provider")
+        }
+        return stub.authenticateSocial(authenticateSocialRequest {
+            this.provider = protoProvider
+            this.accessToken = accessToken
+        })
+    }
 
     suspend fun registerEmail(email: String, password: String, nickname: String): AuthResponse =
         stub.registerEmail(registerEmailRequest {

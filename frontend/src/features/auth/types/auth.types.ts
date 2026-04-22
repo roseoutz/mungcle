@@ -1,3 +1,5 @@
+export type SocialProvider = 'KAKAO' | 'NAVER' | 'APPLE' | 'GOOGLE';
+
 export interface AuthResponse {
   accessToken: string;
   user: UserInfo;

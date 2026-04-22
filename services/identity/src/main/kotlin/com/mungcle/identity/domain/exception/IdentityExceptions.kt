@@ -1,5 +1,7 @@
 package com.mungcle.identity.domain.exception
 
+import com.mungcle.identity.domain.model.SocialProvider
+
 sealed class IdentityException(message: String) : RuntimeException(message)
 
 class EmailTakenException(email: String) :
@@ -22,3 +24,9 @@ class ReportSelfException :
 
 class InvalidReportReasonException :
     IdentityException("신고 사유는 1~500자여야 합니다")
+
+class UnsupportedProviderException(provider: SocialProvider) :
+    IdentityException("지원하지 않는 소셜 로그인 프로바이더입니다: $provider")
+
+class SocialAuthFailedException(provider: SocialProvider, reason: String) :
+    IdentityException("소셜 로그인 실패 [$provider]: $reason")

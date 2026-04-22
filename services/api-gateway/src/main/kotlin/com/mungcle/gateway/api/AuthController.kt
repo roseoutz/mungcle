@@ -5,6 +5,7 @@ import com.mungcle.gateway.dto.KakaoLoginRequest
 import com.mungcle.gateway.dto.LoginRequest
 import com.mungcle.gateway.dto.PushTokenRequest
 import com.mungcle.gateway.dto.RegisterRequest
+import com.mungcle.gateway.dto.SocialLoginRequest
 import com.mungcle.gateway.dto.UserResponse
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.security.AuthUser
@@ -20,9 +21,16 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/auth")
 class AuthController(private val identityClient: IdentityClient) {
 
+    // 기존 카카오 엔드포인트 유지 (하위 호환)
     @PostMapping("/kakao")
     fun kakaoLogin(@Valid @RequestBody req: KakaoLoginRequest): AuthResponseDto = runBlocking {
-        identityClient.authenticateKakao(req.kakaoAccessToken).toDto()
+        identityClient.authenticateSocial("KAKAO", req.kakaoAccessToken).toDto()
+    }
+
+    // 범용 소셜 로그인 엔드포인트
+    @PostMapping("/social")
+    fun socialLogin(@Valid @RequestBody req: SocialLoginRequest): AuthResponseDto = runBlocking {
+        identityClient.authenticateSocial(req.provider, req.accessToken).toDto()
     }
 
     @PostMapping("/email/register")

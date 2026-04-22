@@ -1,6 +1,7 @@
 package com.mungcle.identity.infrastructure.grpc.server
 
 import com.mungcle.identity.domain.port.`in`.AuthenticateKakaoUseCase
+import com.mungcle.identity.domain.port.`in`.AuthenticateSocialUseCase
 import com.mungcle.identity.domain.port.`in`.CreateBlockUseCase
 import com.mungcle.identity.domain.port.`in`.CreateReportUseCase
 import com.mungcle.identity.domain.port.`in`.DeleteBlockUseCase
@@ -15,8 +16,10 @@ import com.mungcle.identity.domain.port.`in`.RegisterEmailUseCase
 import com.mungcle.identity.domain.port.`in`.UpdatePushTokenUseCase
 import com.mungcle.identity.domain.port.`in`.UpdateUserUseCase
 import com.mungcle.identity.domain.port.`in`.ValidateTokenUseCase
+import com.mungcle.identity.domain.model.SocialProvider
 import com.mungcle.proto.identity.v1.AuthResponse
 import com.mungcle.proto.identity.v1.AuthenticateKakaoRequest
+import com.mungcle.proto.identity.v1.AuthenticateSocialRequest
 import com.mungcle.proto.identity.v1.BlockInfo
 import com.mungcle.proto.identity.v1.CreateBlockRequest
 import com.mungcle.proto.identity.v1.CreateBlockResponse
@@ -65,6 +68,7 @@ import com.mungcle.identity.application.dto.AuthResult
 @GrpcService
 class IdentityAuthGrpcService(
     private val authenticateKakaoUseCase: AuthenticateKakaoUseCase,
+    private val authenticateSocialUseCase: AuthenticateSocialUseCase,
     private val registerEmailUseCase: RegisterEmailUseCase,
     private val loginEmailUseCase: LoginEmailUseCase,
     private val validateTokenUseCase: ValidateTokenUseCase,
@@ -84,6 +88,20 @@ class IdentityAuthGrpcService(
     override suspend fun authenticateKakao(request: AuthenticateKakaoRequest): AuthResponse {
         val result = authenticateKakaoUseCase.execute(
             AuthenticateKakaoUseCase.Command(kakaoAccessToken = request.kakaoAccessToken)
+        )
+        return result.toAuthResponse()
+    }
+
+    override suspend fun authenticateSocial(request: AuthenticateSocialRequest): AuthResponse {
+        val provider = when (request.provider) {
+            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_KAKAO -> SocialProvider.KAKAO
+            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_NAVER -> SocialProvider.NAVER
+            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_APPLE -> SocialProvider.APPLE
+            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_GOOGLE -> SocialProvider.GOOGLE
+            else -> throw StatusException(Status.INVALID_ARGUMENT.withDescription("지원하지 않는 소셜 로그인 프로바이더입니다"))
+        }
+        val result = authenticateSocialUseCase.execute(
+            AuthenticateSocialUseCase.Command(provider = provider, accessToken = request.accessToken)
         )
         return result.toAuthResponse()
     }

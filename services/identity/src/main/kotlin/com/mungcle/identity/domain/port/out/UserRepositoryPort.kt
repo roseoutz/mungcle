@@ -1,5 +1,6 @@
 package com.mungcle.identity.domain.port.out
 
+import com.mungcle.identity.domain.model.SocialProvider
 import com.mungcle.identity.domain.model.User
 
 /**
@@ -15,8 +16,8 @@ interface UserRepositoryPort {
     /** 이메일로 사용자 조회 */
     suspend fun findByEmail(email: String): User?
 
-    /** 카카오 ID로 사용자 조회 */
-    suspend fun findByKakaoId(kakaoId: String): User?
+    /** 소셜 프로바이더 + 소셜 ID로 사용자 조회 */
+    suspend fun findBySocialProviderAndSocialId(provider: SocialProvider, socialId: String): User?
 
     /** 여러 ID로 사용자 목록 조회 */
     suspend fun findByIds(ids: List<Long>): List<User>

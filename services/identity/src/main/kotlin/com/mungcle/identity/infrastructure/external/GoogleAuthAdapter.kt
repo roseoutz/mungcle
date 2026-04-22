@@ -1,23 +1,27 @@
 package com.mungcle.identity.infrastructure.external
 
-import com.mungcle.identity.domain.port.out.KakaoApiPort
+import com.mungcle.identity.domain.exception.SocialAuthFailedException
+import com.mungcle.identity.domain.model.SocialProvider
+import com.mungcle.identity.domain.port.out.SocialAuthPort
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 
 @Component
-class KakaoApiAdapter(
+class GoogleAuthAdapter(
     private val webClient: WebClient,
-) : KakaoApiPort {
+) : SocialAuthPort {
+
+    override val provider = SocialProvider.GOOGLE
 
     override suspend fun getUserId(accessToken: String): String {
         val response = webClient.get()
-            .uri("https://kapi.kakao.com/v2/user/me")
+            .uri("https://www.googleapis.com/oauth2/v3/userinfo")
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
             .awaitBody<Map<String, Any>>()
 
-        return response["id"]?.toString()
-            ?: throw IllegalStateException("카카오 API에서 사용자 ID를 가져올 수 없습니다")
+        return response["sub"]?.toString()
+            ?: throw SocialAuthFailedException(provider, "사용자 ID를 가져올 수 없습니다")
     }
 }
