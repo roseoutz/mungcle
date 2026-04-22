@@ -15,9 +15,11 @@ allOpen {
 dependencies {
     implementation(project(":common:domain-common"))
     implementation(project(":common:kafka-common"))
+    implementation(project(":common:grpc-client"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     // gRPC Server + Client (identity에서 push token 조회)
     implementation("net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE")

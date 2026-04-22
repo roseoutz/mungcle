@@ -28,7 +28,7 @@
 | pet-profile | :50052 | 개 프로필 CRUD |
 | walks | :50053 | 산책 상태, nearby 조회 |
 | social | :50054 | 인사, 메시지 |
-| notification | :50055 | FCM 발송, 인앱 알림 |
+| notification | :50055 | 인앱 알림 (Kafka consumer → gRPC) |
 
 ## 로컬 실행
 
