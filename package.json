@@ -1,13 +1,8 @@
 {
   "name": "mungcle",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build:frontend": "npm --prefix frontend run build",
-    "test:frontend": "npm --prefix frontend run test"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
+    "test": "./gradlew test"
   }
 }

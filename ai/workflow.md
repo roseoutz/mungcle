@@ -18,7 +18,7 @@
 확인 없이 자율 실행. 모호할 때만 질문.
 
 ### Full Flow (큰 작업)
-새 모듈 추가, 크로스 서비스 변경, 데이터 모델 변경 등.
+새 모듈 추가, 크로스 모듈 변경, 데이터 모델 변경 등.
 1. plan-docs/ 관련 문서 읽기
 2. 계획 수립 → 사용자 확인
 3. OMC team/autopilot으로 구현
@@ -32,13 +32,11 @@
 [기획 완료] plan-docs/ 참고
      ↓
 [구현] OMC team 병렬 실행
-     │  Lane A: proto + common + docker-compose (먼저)
-     │  Lane B: identity-service (A 후)
-     │  Lane C: pet-profile + walks (B 후, 병렬)
-     │  Lane D: social (B+C 후)
-     │  Lane E: notification (B 후)
-     │  Lane F: api-gateway (B~E proto 확정 후)
-     │  Lane G: expo app (F REST 안정화 후)
+     │  Lane A: proto + common + identity-service (먼저)
+     │  Lane B: pet-profile-service (A 후)
+     │  Lane C: walks-service (A 후)
+     │  Lane D: social-service (A+C 후)
+     │  Lane E: expo app shell (A와 병렬)
      ↓
 [검토] gstack review
      ↓
@@ -53,4 +51,4 @@
 
 - 기능 구현 후 반드시 관련 테스트 실행
 - 테스트 실패 시 수정 후 재실행 (통과할 때까지)
-- PR 전 `./gradlew build` + 관련 서비스 테스트 전체 통과 확인
+- PR 전 `./gradlew test` + lint + build 전체 통과 확인

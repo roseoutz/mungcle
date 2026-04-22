@@ -37,7 +37,7 @@
 |------|----------|
 | `backend.md` | `services/**/*.kt`, `common/**/*.kt` |
 | `frontend.md` | `frontend/**/*.tsx`, `frontend/**/*.ts` |
-| `prisma.md` | `**/db/migration/**`, `**/persistence/**/*.kt`, `**/*.sql` |
+| `database.md` | `**/db/migration/**`, `**/persistence/**/*.kt`, `**/*.sql` |
 | `tests.md` | `**/*.spec.ts`, `**/*.test.ts`, `**/*.test.tsx` |
 
 ## 기술 스택
@@ -140,7 +140,7 @@ GSTACK_MISSING이면 작업 중단. 설치: `git clone --depth 1 https://github.
 [기획 완료] plan-docs/ 확정 (이미 완료됨)
      ↓
 [구현] OMC team 병렬 구현
-     │  Lane A: auth + users + prisma schema (먼저)
+     │  Lane A: auth + users + Flyway migration (먼저)
      │  Lane B: dogs + reports (A 완료 후)
      │  Lane C: walks + patterns (A 완료 후)
      │  Lane D: greetings + messages (A+C 완료 후)

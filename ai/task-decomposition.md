@@ -14,7 +14,7 @@
 
 ### Task (커밋 단위)
 - 한 가지 논리적 변경
-- 예: "Prisma 스키마에 Dog 모델 추가", "DogsService 구현", "DogCard 컴포넌트 생성"
+- 예: "Dog JPA Entity + Flyway 마이그레이션 추가", "CreateDogCommandHandler 구현", "DogCard 컴포넌트 생성"
 
 ## Phase 1 분해 (참고)
 
@@ -22,20 +22,19 @@
 
 ```
 Lane A: Foundation
-  ├── Prisma 스키마 정의 (모든 모델)
-  ├── Auth 모듈 (카카오 + 이메일)
-  └── Users 모듈
+  ├── Proto 정의 + common 패키지 + Docker Compose
+  ├── identity-service (Auth + Users + Blocks + Reports)
+  └── Flyway 마이그레이션
 
-Lane B: Dogs + Reports (A 완료 후)
-  ├── Dogs 모듈 (CRUD + 사진 업로드)
-  └── Reports 모듈 (신고/차단)
+Lane B: pet-profile-service (A 완료 후)
+  └── Dogs CRUD + 사진 업로드
 
-Lane C: Walks (A 완료 후)
-  ├── Walks 모듈 (상태 토글 + nearby + 자동 만료)
-  └── WalkPatterns 모듈 (시간대 집계)
+Lane C: walks-service (A 완료 후)
+  ├── 산책 상태 토글 + nearby + 자동 만료
+  └── WalkPatterns (시간대 집계)
 
-Lane D: Greetings (A+C 완료 후)
-  ├── Greetings 모듈 (인사 + 응답)
+Lane D: social-service (A+C 완료 후)
+  ├── Greetings (인사 + 응답)
   └── Messages (간단 메시지)
 
 Lane E: Expo App (A와 병렬)
