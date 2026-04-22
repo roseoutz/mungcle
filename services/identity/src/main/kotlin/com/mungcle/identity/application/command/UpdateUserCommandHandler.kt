@@ -2,7 +2,6 @@ package com.mungcle.identity.application.command
 
 import com.mungcle.identity.domain.exception.UserNotFoundException
 import com.mungcle.identity.domain.model.User
-import com.mungcle.identity.domain.model.User.Companion.validateNickname
 import com.mungcle.identity.domain.port.`in`.UpdateUserUseCase
 import com.mungcle.identity.domain.port.out.UserRepositoryPort
 import org.springframework.stereotype.Service
@@ -18,13 +17,9 @@ class UpdateUserCommandHandler(
         val user = userRepository.findById(command.userId)
             ?: throw UserNotFoundException(command.userId)
 
-        command.nickname?.let { validateNickname(it) }
-
-        val updated = user.copy(
-            nickname = command.nickname ?: user.nickname,
-            neighborhood = command.neighborhood ?: user.neighborhood,
-            profilePhotoPath = command.profilePhotoPath ?: user.profilePhotoPath,
-        )
-        return userRepository.save(updated)
+        command.nickname?.let { user.changeNickname(it) }
+        command.neighborhood?.let { user.changeNeighborhood(it) }
+        command.profilePhotoPath?.let { user.changeProfilePhoto(it) }
+        return userRepository.save(user)
     }
 }

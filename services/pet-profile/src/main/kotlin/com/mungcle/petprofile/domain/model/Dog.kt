@@ -8,22 +8,46 @@ import java.time.Instant
  * 반려견 도메인 모델.
  * 순수 Kotlin 객체 — 프레임워크 의존성 없음.
  */
-data class Dog(
+class Dog(
     val id: Long = 0,
     val ownerId: Long,
-    val name: String,
-    val breed: String,
-    val size: DogSize,
-    val temperaments: List<Temperament>,
-    val sociability: Int,
-    val photoPath: String? = null,
-    val vaccinationPhotoPath: String? = null,
-    val deletedAt: Instant? = null,
+    name: String,
+    breed: String,
+    size: DogSize,
+    temperaments: List<Temperament>,
+    sociability: Int,
+    photoPath: String? = null,
+    vaccinationPhotoPath: String? = null,
+    deletedAt: Instant? = null,
     val createdAt: Instant = Instant.now(),
 ) {
+    var name: String = name
+        private set
+
+    var breed: String = breed
+        private set
+
+    var size: DogSize = size
+        private set
+
+    var temperaments: List<Temperament> = temperaments
+        private set
+
+    var sociability: Int = sociability
+        private set
+
+    var photoPath: String? = photoPath
+        private set
+
+    var vaccinationPhotoPath: String? = vaccinationPhotoPath
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     init {
-        validateTemperaments(temperaments)
-        require(sociability in 1..5) { "사교성 점수는 1~5 사이여야 합니다" }
+        validateTemperaments(this.temperaments)
+        require(this.sociability in 1..5) { "사교성 점수는 1~5 사이여야 합니다" }
     }
 
     /** 예방접종 사진 등록 여부 */
@@ -34,8 +58,47 @@ data class Dog(
         if (ownerId != requesterId) throw DogNotOwnedException(id, requesterId)
     }
 
+    /**
+     * 부분 업데이트. null 인 파라미터는 기존 값 유지.
+     * temperaments 제공 시 1~3개 검증, sociability 제공 시 1~5 검증.
+     */
+    fun update(
+        name: String? = null,
+        breed: String? = null,
+        size: DogSize? = null,
+        temperaments: List<Temperament>? = null,
+        sociability: Int? = null,
+        photoPath: String? = null,
+        vaccinationPhotoPath: String? = null,
+    ) {
+        if (temperaments != null) validateTemperaments(temperaments)
+        if (sociability != null) require(sociability in 1..5) { "사교성 점수는 1~5 사이여야 합니다" }
+
+        if (name != null) this.name = name
+        if (breed != null) this.breed = breed
+        if (size != null) this.size = size
+        if (temperaments != null) this.temperaments = temperaments
+        if (sociability != null) this.sociability = sociability
+        if (photoPath != null) this.photoPath = photoPath
+        if (vaccinationPhotoPath != null) this.vaccinationPhotoPath = vaccinationPhotoPath
+    }
+
     /** 소프트 삭제 */
-    fun softDelete(): Dog = copy(deletedAt = Instant.now())
+    fun softDelete(): Dog {
+        this.deletedAt = Instant.now()
+        return this
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Dog) return false
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+
+    override fun toString(): String =
+        "Dog(id=$id, ownerId=$ownerId, name=$name, breed=$breed, size=$size)"
 
     companion object {
         private const val MIN_TEMPERAMENTS = 1
