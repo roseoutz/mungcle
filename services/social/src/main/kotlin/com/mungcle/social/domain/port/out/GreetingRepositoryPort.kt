@@ -2,6 +2,7 @@ package com.mungcle.social.domain.port.out
 
 import com.mungcle.social.domain.model.Greeting
 import com.mungcle.social.domain.model.GreetingStatus
+import java.time.Instant
 
 /**
  * Greeting 영속성 포트.
@@ -11,6 +12,9 @@ interface GreetingRepositoryPort {
     /** Greeting을 저장하고 저장된 Greeting을 반환한다. */
     fun save(greeting: Greeting): Greeting
 
+    /** 여러 Greeting을 저장하고 저장된 목록을 반환한다. */
+    fun saveAll(greetings: List<Greeting>): List<Greeting>
+
     /** ID로 Greeting을 조회한다. 없으면 null. */
     fun findById(id: Long): Greeting?
 
@@ -19,4 +23,10 @@ interface GreetingRepositoryPort {
 
     /** 사용자 ID와 선택적 필터로 Greeting 목록을 조회한다. */
     fun findByUserId(userId: Long, statusFilter: GreetingStatus?, isSender: Boolean?): List<Greeting>
+
+    /** PENDING 상태이고 expiresAt이 now 이전인 Greeting 목록을 반환한다. */
+    fun findExpiredPending(now: Instant): List<Greeting>
+
+    /** ACCEPTED 상태이고 expiresAt이 now 이전인 Greeting 목록을 반환한다. */
+    fun findExpiredAccepted(now: Instant): List<Greeting>
 }

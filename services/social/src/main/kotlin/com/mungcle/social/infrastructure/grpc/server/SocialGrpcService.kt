@@ -15,14 +15,18 @@ import com.mungcle.proto.social.v1.MessageInfo
 import com.mungcle.proto.social.v1.SocialServiceGrpcKt
 import com.mungcle.proto.social.v1.greetingInfo
 import com.mungcle.proto.social.v1.listGreetingsResponse
+import com.mungcle.proto.social.v1.listMessagesResponse
+import com.mungcle.proto.social.v1.messageInfo
 import com.mungcle.social.domain.exception.SocialException
 import com.mungcle.social.domain.model.Greeting
 import com.mungcle.social.domain.model.GreetingStatus
+import com.mungcle.social.domain.model.Message
 import com.mungcle.social.domain.port.`in`.CreateGreetingUseCase
 import com.mungcle.social.domain.port.`in`.GetGreetingUseCase
 import com.mungcle.social.domain.port.`in`.ListGreetingsUseCase
+import com.mungcle.social.domain.port.`in`.ListMessagesUseCase
 import com.mungcle.social.domain.port.`in`.RespondGreetingUseCase
-import io.grpc.Status
+import com.mungcle.social.domain.port.`in`.SendMessageUseCase
 import io.grpc.StatusException
 import net.devh.boot.grpc.server.service.GrpcService
 
@@ -32,6 +36,8 @@ class SocialGrpcService(
     private val respondGreetingUseCase: RespondGreetingUseCase,
     private val getGreetingUseCase: GetGreetingUseCase,
     private val listGreetingsUseCase: ListGreetingsUseCase,
+    private val sendMessageUseCase: SendMessageUseCase,
+    private val listMessagesUseCase: ListMessagesUseCase,
 ) : SocialServiceGrpcKt.SocialServiceCoroutineImplBase() {
 
     override suspend fun createGreeting(request: CreateGreetingRequest): GreetingInfo {
@@ -104,11 +110,42 @@ class SocialGrpcService(
     }
 
     override suspend fun sendMessage(request: SendMessageRequest): MessageInfo {
-        throw StatusException(Status.UNIMPLEMENTED.withDescription("태스크 08에서 구현 예정"))
+        try {
+            val message = sendMessageUseCase.execute(
+                SendMessageUseCase.Command(
+                    greetingId = request.greetingId,
+                    senderUserId = request.senderUserId,
+                    body = request.body,
+                )
+            )
+            return message.toMessageInfo()
+        } catch (e: SocialException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun listMessages(request: ListMessagesRequest): ListMessagesResponse {
-        throw StatusException(Status.UNIMPLEMENTED.withDescription("태스크 08에서 구현 예정"))
+        try {
+            val messages = listMessagesUseCase.execute(
+                ListMessagesUseCase.Query(
+                    greetingId = request.greetingId,
+                    userId = request.userId,
+                )
+            )
+            return listMessagesResponse {
+                this.messages += messages.map { it.toMessageInfo() }
+            }
+        } catch (e: SocialException) {
+            throw e.toStatusException()
+        }
+    }
+
+    private fun Message.toMessageInfo(): MessageInfo = messageInfo {
+        id = this@toMessageInfo.id
+        greetingId = this@toMessageInfo.greetingId
+        senderUserId = this@toMessageInfo.senderUserId
+        body = this@toMessageInfo.body
+        createdAt = this@toMessageInfo.createdAt.epochSecond
     }
 
     private fun Greeting.toGreetingInfo(): GreetingInfo = greetingInfo {

@@ -4,6 +4,7 @@ import com.mungcle.social.domain.model.GreetingStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.Instant
 import java.util.Optional
 
 interface GreetingSpringDataRepository : JpaRepository<GreetingEntity, Long> {
@@ -29,4 +30,10 @@ interface GreetingSpringDataRepository : JpaRepository<GreetingEntity, Long> {
         @Param("statusFilter") statusFilter: GreetingStatus?,
         @Param("isSender") isSender: Boolean?,
     ): List<GreetingEntity>
+
+    @Query("SELECT g FROM GreetingEntity g WHERE g.status = 'PENDING' AND g.expiresAt < :now")
+    fun findExpiredPending(@Param("now") now: Instant): List<GreetingEntity>
+
+    @Query("SELECT g FROM GreetingEntity g WHERE g.status = 'ACCEPTED' AND g.expiresAt < :now")
+    fun findExpiredAccepted(@Param("now") now: Instant): List<GreetingEntity>
 }
