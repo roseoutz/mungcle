@@ -4,10 +4,11 @@ SET search_path TO notification;
 CREATE TABLE notifications (
     id          BIGINT PRIMARY KEY,
     user_id     BIGINT NOT NULL,
-    type        VARCHAR(30) NOT NULL, -- GREETING_RECEIVED, GREETING_ACCEPTED, MESSAGE_RECEIVED, WALK_EXPIRED
-    payload     JSONB NOT NULL DEFAULT '{}',
-    read_at     TIMESTAMP,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+    type        VARCHAR(30) NOT NULL,
+    payload_json TEXT NOT NULL DEFAULT '{}',
+    read        BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_notifications_user ON notifications(user_id, read_at, created_at DESC);
+CREATE INDEX idx_notifications_user ON notifications (user_id, created_at DESC);
+CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read = FALSE;
