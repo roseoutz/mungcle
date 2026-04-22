@@ -1,20 +1,14 @@
 import { apiClient } from '../../../shared/utils/api';
+import type { GreetingResponse, MessageResponse } from '../types/social.types';
 
-export interface GreetingResponse {
-  id: number;
-  senderId: number;
-  receiverId: number;
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
-  expiresAt: number;
-  createdAt: number;
-}
-
-export interface MessageResponse {
-  id: number;
-  greetingId: number;
-  senderId: number;
-  body: string;
-  createdAt: number;
+export async function createGreeting(
+  senderDogId: number,
+  receiverWalkId: number,
+): Promise<GreetingResponse> {
+  return apiClient<GreetingResponse>('/api/greetings', {
+    method: 'POST',
+    body: JSON.stringify({ senderDogId, receiverWalkId }),
+  });
 }
 
 export async function listGreetings(
