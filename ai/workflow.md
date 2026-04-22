@@ -19,14 +19,77 @@
 
 ### Full Flow (큰 작업)
 새 모듈 추가, 크로스 모듈 변경, 데이터 모델 변경 등.
-1. plan-docs/ 관련 문서 읽기
-2. 계획 수립 → 사용자 확인
-3. OMC team/autopilot으로 구현
-4. gstack review로 코드 리뷰
-5. gstack qa로 테스트
-6. gstack ship으로 배포
+아래 "표준 이슈-투-머지 파이프라인" 전체를 따른다.
 
-## 표준 구현 흐름 (Phase 1)
+## 표준 이슈-투-머지 파이프라인
+
+모든 작업은 아래 파이프라인을 따른다. **각 단계에서 Notion 작업 카드를 반드시 최신화**한다.
+
+```
+① 이슈 발견/요청
+     ↓
+② GitHub Issue 등록
+     ↓
+③ Notion 작업 카드 등록 (Mungcle Backlog)
+     │  - GitHub Issue 링크 포함
+     │  - 에픽 연결 (에픽 키 기입)
+     │  - 상태: "시작 전"
+     ↓
+④ 브랜치 생성
+     │  - 이름: <type>/MC-<번호>-<설명>
+     │  - 예: feature/MC-40-rich-domain-model
+     ↓
+⑤ 구현 (OMC team/autopilot/ralph)
+     │  - Notion 상태 → "진행 중"
+     │  - 중간 진척 사항 Notion 카드 본문에 업데이트
+     ↓
+⑥ 코드 리뷰 요청
+     │  - Notion 상태 → "코드 리뷰 중"
+     │  - gstack review 또는 code-reviewer 에이전트 실행
+     ↓
+⑦ 코드 리뷰 완료
+     │  - Notion 상태 → "리뷰 완료"
+     │  - 리뷰 결과 요약을 Notion 카드에 기록
+     ↓
+⑧ 사용자 확인 후 머지
+     │  - 사용자에게 머지 여부 확인 (자동 머지 금지)
+     │  - 머지 후 Notion 상태 → "완료"
+     │  - 브랜치 삭제
+```
+
+### Notion 카드 관리 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **항상 최신화** | 작업 시작, 중간 진행, 리뷰, 완료 — 모든 상태 변경 시 Notion 카드 업데이트 |
+| **브랜치명 = 이슈 키 프리픽스** | `<type>/MC-<번호>-<설명>` (예: `feature/MC-40-rich-domain-model`) |
+| **에픽 분리 관리** | 에픽은 Backlog에 "Epic" 유형으로 별도 등록. 하위 Story/Task의 "에픽" 필드에 에픽 이슈 키(예: `MC-10`) 기입하여 연결 |
+| **GitHub 연결** | Notion 카드 본문 첫 줄에 GitHub Issue 링크 포함 |
+| **진척 기록** | 구현 중 주요 변경사항/결정사항을 카드 본문에 간략히 기록 |
+
+### Notion 상태 매핑
+
+Mungcle Backlog DB의 "상태" 속성에 아래 옵션이 필요하다.
+
+| 상태 | 그룹 | 파이프라인 단계 |
+|------|------|---------------|
+| 시작 전 | To-do | ③ 카드 등록 |
+| 진행 중 | In progress | ⑤ 구현 |
+| 코드 리뷰 중 | In progress | ⑥ 리뷰 요청 |
+| 리뷰 완료 | In progress | ⑦ 리뷰 통과 |
+| 완료 | Complete | ⑧ 머지 완료 |
+
+> **설정 필요:** Notion에서 Mungcle Backlog DB → "상태" 속성 → "코드 리뷰 중", "리뷰 완료" 옵션을 In progress 그룹에 추가할 것.
+
+### Notion API 정보
+
+| 항목 | 값 |
+|------|-----|
+| Backlog DB ID | `0ecda766-cff9-491a-9d12-eba4b76123a7` |
+| 이슈 키 프리픽스 | `MC` |
+| 주요 속성 | 제목, 유형, 상태, 우선순위, 라벨, 서비스, 스프린트, 에픽, 스토리 포인트 |
+
+## 표준 구현 흐름 (Phase 1 병렬 레인)
 
 ```
 [기획 완료] plan-docs/ 참고

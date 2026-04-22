@@ -18,7 +18,7 @@
 |------|------|----------|
 | `conventions-backend.md` | Kotlin+Spring Boot+JPA+gRPC 코딩 규칙 | 백엔드 코드 작성 시 |
 | `conventions-frontend.md` | Expo/RN 코딩 규칙 | 프론트엔드 코드 작성 시 |
-| `workflow.md` | 작업 흐름, gstack+OMC 연동 | 작업 시작 시 |
+| `workflow.md` | 이슈-투-머지 파이프라인, Notion 연동, gstack+OMC 연동 | 작업 시작 시 |
 | `testing.md` | 테스트 전략, 프레임워크 | 테스트 작성 시 |
 | `git-convention.md` | 커밋, 브랜치 규칙 | 커밋/PR 시 |
 | `code-review.md` | 리뷰 체크리스트 | PR 전 자가 검토 시 |
@@ -54,10 +54,24 @@
 - 코드: 영어. 커밋 메시지/주석/문서: 한국어.
 - 커밋: `<type>(<scope>): <한글 설명>` (feat, fix, refactor, test, chore, docs)
 - 커밋 전 반드시 `./gradlew test` (백엔드) 또는 `npm test` (프론트) 실행. 테스트 실패 시 커밋 금지.
-- 브랜치: `develop` → `feature/<name>`, `fix/<name>`
+- 브랜치: `feature/MC-<번호>-<name>`, `fix/MC-<번호>-<name>` (Notion 이슈 키 프리픽스 필수)
 - TDD 권장. 강제는 아님.
 - GPS 좌표 저장 금지 — 200m 그리드 스냅만 저장.
 - N+1 방지: JPA `@EntityGraph` / `JOIN FETCH` 사용.
+
+## Notion 연동 (Mungcle Backlog)
+
+모든 작업은 **이슈 → Notion → 브랜치 → 구현 → 리뷰 → 머지** 파이프라인을 따른다.
+상세: `ai/workflow.md` "표준 이슈-투-머지 파이프라인" 참고.
+
+| 규칙 | 내용 |
+|------|------|
+| Notion DB | Mungcle Backlog (`0ecda766-cff9-491a-9d12-eba4b76123a7`) |
+| 카드 최신화 | 상태 변경 시마다 Notion 카드 업데이트 필수 |
+| 브랜치명 | `<type>/MC-<번호>-<설명>` (Notion 이슈 키 프리픽스) |
+| 에픽 | Backlog에 "Epic" 유형으로 별도 등록, 하위 이슈에서 에픽 키로 연결 |
+| GitHub 연결 | Notion 카드 본문 첫 줄에 GitHub Issue 링크 |
+| 머지 | 반드시 사용자 확인 후 머지. 자동 머지 금지 |
 
 ## 작업 판단 흐름
 

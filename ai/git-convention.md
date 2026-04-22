@@ -4,12 +4,15 @@
 
 ```
 main
-  └── feature/<name>   # 새 기능
-  └── fix/<name>       # 버그 수정
+  └── feature/MC-<번호>-<name>   # 새 기능
+  └── fix/MC-<번호>-<name>       # 버그 수정
+  └── refactor/MC-<번호>-<name>  # 리팩터링
 ```
 
 - main에 직접 푸시 금지. PR을 통해서만.
-- 브랜치 이름은 영어, kebab-case: `feature/dog-profile`, `fix/grid-snap-boundary`
+- **브랜치 이름은 Notion 이슈 키를 프리픽스로 사용**: `<type>/MC-<번호>-<설명>`
+- 설명 부분은 영어, kebab-case
+- 예시: `feature/MC-40-rich-domain-model`, `fix/MC-12-grid-snap-boundary`
 
 ## 커밋
 
