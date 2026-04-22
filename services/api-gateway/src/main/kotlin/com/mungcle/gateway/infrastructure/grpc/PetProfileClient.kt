@@ -6,6 +6,7 @@ import com.mungcle.proto.petprofile.v1.PetProfileServiceGrpcKt
 import com.mungcle.proto.petprofile.v1.createDogRequest
 import com.mungcle.proto.petprofile.v1.deleteDogRequest
 import com.mungcle.proto.petprofile.v1.getDogRequest
+import com.mungcle.proto.petprofile.v1.getDogsByIdsRequest
 import com.mungcle.proto.petprofile.v1.getDogsByOwnerRequest
 import com.mungcle.proto.petprofile.v1.updateDogRequest
 import net.devh.boot.grpc.client.inject.GrpcClient
@@ -69,6 +70,11 @@ class PetProfileClient(
             if (photoPath != null) this.photoPath = photoPath
             if (vaccinationPhotoPath != null) this.vaccinationPhotoPath = vaccinationPhotoPath
         })
+
+    suspend fun getDogsByIds(dogIds: List<Long>): List<DogInfo> =
+        stub.getDogsByIds(getDogsByIdsRequest {
+            this.dogIds += dogIds
+        }).dogsList
 
     suspend fun deleteDog(dogId: Long, ownerId: Long) {
         stub.deleteDog(deleteDogRequest {
