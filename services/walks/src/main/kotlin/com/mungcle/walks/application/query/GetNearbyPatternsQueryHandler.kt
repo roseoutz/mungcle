@@ -28,14 +28,16 @@ class GetNearbyPatternsQueryHandler(
 
         val cutoff = now.minus(14, ChronoUnit.DAYS)
 
-        // identity 서비스에서 차단 목록 직접 조회 + request의 것도 합침 (union)
-        // 패턴은 dogId 기준이므로, 블록된 userId 소유의 dogId를 제외하려면 추가 조회가 필요.
-        // 현재는 차단 목록을 수집만 하며, ACTIVE 산책 중 차단된 userId 소유 dogId는 이미 activeWalkDogIds에서 제외됨.
         val identityBlockedIds = identityPort.getBlockedUserIds(query.userId)
-        @Suppress("UNUSED_VARIABLE")
-        val blockedUserIds = (query.blockedUserIds + identityBlockedIds).toSet()
+        val allBlockedUserIds = (query.blockedUserIds + identityBlockedIds).distinct()
 
-        val activeWalkDogIds = walkRepository
+        val blockedDogIds = if (allBlockedUserIds.isNotEmpty()) {
+            walkRepository.findDogIdsByUserIds(allBlockedUserIds)
+        } else {
+            emptyList()
+        }
+
+        val activeDogIds = walkRepository
             .findActiveOpenByGridCells(GridCell.adjacentCells(centerCell))
             .map { it.dogId }
             .toSet()
@@ -43,7 +45,8 @@ class GetNearbyPatternsQueryHandler(
         return walkPatternRepository
             .findByGridCellsAndHourRange(adjacentCells, hourRange)
             .filter { it.lastWalkedAt.isAfter(cutoff) }
-            .filter { it.dogId !in activeWalkDogIds }
+            .filter { it.dogId !in activeDogIds }
+            .filter { it.dogId !in blockedDogIds }
             .sortedByDescending { it.walkCount }
             .take(10)
     }

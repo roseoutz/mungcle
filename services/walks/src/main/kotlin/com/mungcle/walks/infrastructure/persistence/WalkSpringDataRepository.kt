@@ -19,4 +19,7 @@ interface WalkSpringDataRepository : JpaRepository<WalkEntity, Long> {
 
     @Query("SELECT w FROM WalkEntity w WHERE w.status = 'ACTIVE' AND w.endsAt < :now")
     fun findByStatusAndEndsAtBefore(@Param("now") now: Instant): List<WalkEntity>
+
+    @Query("SELECT DISTINCT w.dogId FROM WalkEntity w WHERE w.userId IN :userIds")
+    fun findDogIdsByUserIds(@Param("userIds") userIds: List<Long>): List<Long>
 }

@@ -32,4 +32,12 @@ class WalkRepositoryAdapter(
 
     override fun findExpiredActive(now: Instant): List<Walk> =
         springDataRepository.findByStatusAndEndsAtBefore(now).map(WalkMapper::toDomain)
+
+    override fun findDogIdsByUserIds(userIds: List<Long>): List<Long> =
+        springDataRepository.findDogIdsByUserIds(userIds)
+
+    override fun saveAll(walks: List<Walk>): List<Walk> {
+        val entities = walks.map { WalkMapper.toEntity(it) }
+        return springDataRepository.saveAll(entities).map { WalkMapper.toDomain(it) }
+    }
 }

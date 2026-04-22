@@ -16,4 +16,8 @@ interface WalkRepositoryPort {
      * @param now 기준 시각
      */
     fun findExpiredActive(now: Instant): List<Walk>
+
+    fun findDogIdsByUserIds(userIds: List<Long>): List<Long>
+
+    fun saveAll(walks: List<Walk>): List<Walk>
 }

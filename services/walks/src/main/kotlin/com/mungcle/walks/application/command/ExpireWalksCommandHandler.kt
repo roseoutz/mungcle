@@ -16,11 +16,15 @@ class ExpireWalksCommandHandler(
     @Transactional
     override fun execute(now: Instant): Int {
         val expiredWalks = walkRepository.findExpiredActive(now)
-        expiredWalks.forEach { walk ->
-            val ended = walk.end(now)
-            walkRepository.save(ended)
+        if (expiredWalks.isEmpty()) return 0
+
+        val endedWalks = expiredWalks.map { it.end(now) }
+        walkRepository.saveAll(endedWalks)
+
+        endedWalks.forEach { walk ->
             walkEventPublisher.publishWalkExpired(walk.id, walk.userId)
         }
-        return expiredWalks.size
+
+        return endedWalks.size
     }
 }

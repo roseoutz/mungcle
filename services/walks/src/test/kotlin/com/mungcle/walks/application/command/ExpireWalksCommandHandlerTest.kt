@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ExpireWalksCommandHandlerTest {
 
@@ -35,17 +36,18 @@ class ExpireWalksCommandHandlerTest {
     )
 
     @Test
-    fun `만료 대상 산책을 찾아 end 처리 후 저장`() {
+    fun `만료 대상 산책을 찾아 end 처리 후 saveAll로 배치 저장`() {
         val walk = createWalk(id = 1L)
         every { walkRepository.findExpiredActive(now) } returns listOf(walk)
-        val savedSlot = slot<Walk>()
-        every { walkRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+        val savedSlot = slot<List<Walk>>()
+        every { walkRepository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
 
         handler.execute(now)
 
         val saved = savedSlot.captured
-        assertEquals(WalkStatus.ENDED, saved.status)
-        assertEquals(now, saved.endsAt)
+        assertEquals(1, saved.size)
+        assertEquals(WalkStatus.ENDED, saved[0].status)
+        assertEquals(now, saved[0].endsAt)
     }
 
     @Test
@@ -53,7 +55,7 @@ class ExpireWalksCommandHandlerTest {
         val walk1 = createWalk(id = 1L, userId = 100L)
         val walk2 = createWalk(id = 2L, userId = 200L)
         every { walkRepository.findExpiredActive(now) } returns listOf(walk1, walk2)
-        every { walkRepository.save(any()) } answers { firstArg() }
+        every { walkRepository.saveAll(any()) } answers { firstArg() }
 
         handler.execute(now)
 
@@ -65,7 +67,7 @@ class ExpireWalksCommandHandlerTest {
     fun `만료된 산책 수 반환`() {
         val walks = listOf(createWalk(id = 1L), createWalk(id = 2L), createWalk(id = 3L))
         every { walkRepository.findExpiredActive(now) } returns walks
-        every { walkRepository.save(any()) } answers { firstArg() }
+        every { walkRepository.saveAll(any()) } answers { firstArg() }
 
         val count = handler.execute(now)
 
@@ -80,5 +82,18 @@ class ExpireWalksCommandHandlerTest {
 
         assertEquals(0, count)
         verify(exactly = 0) { walkEventPublisher.publishWalkExpired(any(), any()) }
+        verify(exactly = 0) { walkRepository.saveAll(any()) }
+    }
+
+    @Test
+    fun `saveAll이 개별 save 대신 단일 배치 호출로 실행`() {
+        val walks = listOf(createWalk(id = 1L), createWalk(id = 2L))
+        every { walkRepository.findExpiredActive(now) } returns walks
+        every { walkRepository.saveAll(any()) } answers { firstArg() }
+
+        handler.execute(now)
+
+        verify(exactly = 1) { walkRepository.saveAll(any()) }
+        verify(exactly = 0) { walkRepository.save(any()) }
     }
 }

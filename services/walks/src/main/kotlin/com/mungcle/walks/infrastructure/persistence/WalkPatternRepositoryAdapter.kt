@@ -2,9 +2,9 @@ package com.mungcle.walks.infrastructure.persistence
 
 import com.mungcle.walks.domain.model.WalkPattern
 import com.mungcle.walks.domain.port.out.WalkPatternRepositoryPort
+import io.hypersistence.tsid.TSID
 import org.springframework.stereotype.Repository
 import java.time.Instant
-import java.util.concurrent.ThreadLocalRandom
 
 @Repository
 class WalkPatternRepositoryAdapter(
@@ -17,7 +17,7 @@ class WalkPatternRepositoryAdapter(
 
     override fun upsert(gridCell: String, hourOfDay: Int, dogId: Long, walkedAt: Instant) {
         // ON CONFLICT handles duplicate (grid_cell, hour_of_day, dog_id) — ID is only used for new inserts
-        val id = (Instant.now().toEpochMilli() shl 22) or (ThreadLocalRandom.current().nextLong(0L, 1L shl 22))
+        val id = TSID.Factory.getTsid().toLong()
         springDataRepository.upsert(id, gridCell, hourOfDay, dogId, walkedAt)
     }
 }

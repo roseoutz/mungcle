@@ -45,10 +45,10 @@ class GetNearbyPatternsQueryHandlerTest {
         hourOfDay = hourOfDay,
     )
 
-    private fun createWalk(dogId: Long) = Walk(
+    private fun createWalk(dogId: Long, userId: Long = dogId * 10) = Walk(
         id = dogId,
         dogId = dogId,
-        userId = dogId * 10,
+        userId = userId,
         type = WalkType.OPEN,
         gridCell = GridCell("10:20"),
         status = WalkStatus.ACTIVE,
@@ -62,6 +62,7 @@ class GetNearbyPatternsQueryHandlerTest {
             createPattern(id = 1L, dogId = 10L),
         )
         every { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        every { walkRepository.findDogIdsByUserIds(any()) } returns emptyList()
         coEvery { identityPort.getBlockedUserIds(any()) } returns emptyList()
 
         val result = handler.execute(
@@ -77,6 +78,7 @@ class GetNearbyPatternsQueryHandlerTest {
         val recentPattern = createPattern(id = 2L, dogId = 20L, lastWalkedAt = now.minus(13, ChronoUnit.DAYS))
         every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns listOf(oldPattern, recentPattern)
         every { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        every { walkRepository.findDogIdsByUserIds(any()) } returns emptyList()
         coEvery { identityPort.getBlockedUserIds(any()) } returns emptyList()
 
         val result = handler.execute(
@@ -93,6 +95,7 @@ class GetNearbyPatternsQueryHandlerTest {
         val pattern2 = createPattern(id = 2L, dogId = 20L)
         every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns listOf(pattern1, pattern2)
         every { walkRepository.findActiveOpenByGridCells(any()) } returns listOf(createWalk(dogId = 10L))
+        every { walkRepository.findDogIdsByUserIds(any()) } returns emptyList()
         coEvery { identityPort.getBlockedUserIds(any()) } returns emptyList()
 
         val result = handler.execute(
@@ -110,6 +113,7 @@ class GetNearbyPatternsQueryHandlerTest {
         }
         every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns patterns
         every { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        every { walkRepository.findDogIdsByUserIds(any()) } returns emptyList()
         coEvery { identityPort.getBlockedUserIds(any()) } returns emptyList()
 
         val result = handler.execute(
@@ -123,19 +127,39 @@ class GetNearbyPatternsQueryHandlerTest {
     }
 
     @Test
-    fun `blockedUserIds 및 IdentityPort 차단 목록 합산하여 제외`() = runTest {
-        // 이 테스트는 dogId 기준이므로 블록은 userId 기준으로 동작하지 않음
-        // 패턴 자체가 dogId 기반이므로, 실제 차단 처리는 없다는 점을 검증
-        val pattern = createPattern(id = 1L, dogId = 10L)
-        every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns listOf(pattern)
+    fun `차단된 userId 소유 dogId는 패턴 결과에서 제외`() = runTest {
+        val pattern1 = createPattern(id = 1L, dogId = 10L) // blockedUser(userId=50) 소유
+        val pattern2 = createPattern(id = 2L, dogId = 20L) // 차단되지 않은 사용자
+        every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns listOf(pattern1, pattern2)
         every { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        // blockedUserIds=[50] → dogId=[10] 매핑
+        every { walkRepository.findDogIdsByUserIds(listOf(50L)) } returns listOf(10L)
         coEvery { identityPort.getBlockedUserIds(1L) } returns emptyList()
+
+        val result = handler.execute(
+            GetNearbyPatternsUseCase.Query(gridCell = "10:20", userId = 1L, blockedUserIds = listOf(50L))
+        )
+
+        assertEquals(1, result.size)
+        assertEquals(20L, result[0].dogId)
+    }
+
+    @Test
+    fun `IdentityPort 차단 목록의 userId 소유 dogId도 제외`() = runTest {
+        val pattern1 = createPattern(id = 1L, dogId = 10L) // identityBlocked(userId=99) 소유
+        val pattern2 = createPattern(id = 2L, dogId = 20L)
+        every { walkPatternRepository.findByGridCellsAndHourRange(any(), any()) } returns listOf(pattern1, pattern2)
+        every { walkRepository.findActiveOpenByGridCells(any()) } returns emptyList()
+        // identityPort가 userId=99를 차단 목록으로 반환 → dogId=10 매핑
+        every { walkRepository.findDogIdsByUserIds(listOf(99L)) } returns listOf(10L)
+        coEvery { identityPort.getBlockedUserIds(1L) } returns listOf(99L)
 
         val result = handler.execute(
             GetNearbyPatternsUseCase.Query(gridCell = "10:20", userId = 1L, blockedUserIds = emptyList())
         )
 
         assertEquals(1, result.size)
+        assertEquals(20L, result[0].dogId)
     }
 
     @Test
