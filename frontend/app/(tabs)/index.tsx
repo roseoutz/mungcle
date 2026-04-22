@@ -1,10 +1,12 @@
 import * as Location from 'expo-location';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../src/constants/theme';
 import { typography } from '../../src/constants/typography';
 import { useAuth } from '../../src/features/auth';
+import { getMyDogs } from '../../src/features/dogs';
 import { useGreeting } from '../../src/features/social';
 import { NearbyDogCard } from '../../src/features/walks/components/NearbyDogCard';
 import { TimePatternCard } from '../../src/features/walks/components/TimePatternCard';
@@ -29,12 +31,39 @@ function SkeletonCard() {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { walks, patterns, loading, error, refresh } = useNearbyWalks(
     coords?.lat ?? null,
     coords?.lng ?? null,
   );
   const { send: sendGreeting } = useGreeting();
+
+  // 선택된 강아지 ID — 첫 번째 강아지를 기본으로 사용
+  const [selectedDogId, setSelectedDogId] = useState<number | null>(null);
+  // 강아지가 한 마리도 없는 경우 true
+  const [hasDogs, setHasDogs] = useState<boolean>(true);
+
+  // 화면 포커스 시 강아지 목록 새로고침 (등록 후 복귀 케이스 포함)
+  useFocusEffect(
+    useCallback(() => {
+      async function fetchDogs() {
+        try {
+          const dogs = await getMyDogs();
+          if (dogs.length === 0) {
+            setHasDogs(false);
+            setSelectedDogId(null);
+          } else {
+            setHasDogs(true);
+            setSelectedDogId(dogs[0].id);
+          }
+        } catch {
+          // 조회 실패 시 기존 상태 유지
+        }
+      }
+      fetchDogs();
+    }, []),
+  );
 
   // 위치 권한 요청 및 좌표 획득
   useEffect(() => {
@@ -49,21 +78,18 @@ export default function HomeScreen() {
     getLocation();
   }, []);
 
-  // 첫 번째 강아지 ID (산책 토글용) — 추후 강아지 선택 UI로 개선 가능
-  const firstDogId: number | null = null;
-
   const handleGreet = useCallback(
     async (walkId: number) => {
-      if (!firstDogId) {
+      if (!selectedDogId) {
         Alert.alert('강아지 등록 필요', '먼저 강아지를 등록해주세요.');
         return;
       }
-      const result = await sendGreeting(firstDogId, walkId);
+      const result = await sendGreeting(selectedDogId, walkId);
       if (result) {
         Alert.alert('인사 전송', '인사를 보냈어요! 🐾');
       }
     },
-    [firstDogId, sendGreeting],
+    [selectedDogId, sendGreeting],
   );
 
   const handleCardPress = useCallback((_walkId: number) => {
@@ -79,6 +105,18 @@ export default function HomeScreen() {
 
   const keyExtractor = useCallback((item: NearbyWalkCard) => String(item.walkId), []);
 
+  // 강아지가 없으면 산책 섹션 대신 등록 안내 표시
+  const WalkSection = !hasDogs ? (
+    <EmptyState
+      icon="🐶"
+      message="강아지를 등록해주세요"
+      ctaLabel="강아지 등록하기"
+      onCta={() => router.push('/(tabs)/dogs')}
+    />
+  ) : (
+    <WalkToggle dogId={selectedDogId} />
+  );
+
   const ListHeader = (
     <View>
       <View style={styles.header}>
@@ -87,7 +125,7 @@ export default function HomeScreen() {
         </Text>
         <Text style={styles.sub}>근처 반려견과 산책을 시작해보세요.</Text>
       </View>
-      <WalkToggle dogId={firstDogId} />
+      {WalkSection}
       <Text style={styles.sectionTitle}>주변 산책 중인 강아지</Text>
     </View>
   );
