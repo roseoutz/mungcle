@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: social
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mungcle}?currentSchema=social
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: social
+    open-in-view: false
+  flyway:
+    schemas: social
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+server:
+  port: 8084
+
+grpc:
+  server:
+    port: 50054
+  client:
+    identity:
+      address: static://${IDENTITY_HOST:localhost}:50051
+      negotiation-type: plaintext
+    pet-profile:
+      address: static://${PET_PROFILE_HOST:localhost}:50052
+      negotiation-type: plaintext
+    walks:
+      address: static://${WALKS_HOST:localhost}:50053
+      negotiation-type: plaintext
+
+tsid:
+  node: ${TSID_NODE:5}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${OTEL_HOST:localhost}:4318/v1/traces

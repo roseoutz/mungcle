@@ -1,0 +1,45 @@
+server:
+  port: 4000
+
+spring:
+  application:
+    name: api-gateway
+  threads:
+    virtual:
+      enabled: true
+
+# gRPC client channels
+grpc:
+  client:
+    identity:
+      address: static://${IDENTITY_HOST:localhost}:50051
+      negotiation-type: plaintext
+    pet-profile:
+      address: static://${PET_PROFILE_HOST:localhost}:50052
+      negotiation-type: plaintext
+    walks:
+      address: static://${WALKS_HOST:localhost}:50053
+      negotiation-type: plaintext
+    social:
+      address: static://${SOCIAL_HOST:localhost}:50054
+      negotiation-type: plaintext
+    notification:
+      address: static://${NOTIFICATION_HOST:localhost}:50055
+      negotiation-type: plaintext
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET:mungcle-dev-secret-key-change-in-production}
+  expiration: 604800000 # 7 days
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${OTEL_HOST:localhost}:4318/v1/traces

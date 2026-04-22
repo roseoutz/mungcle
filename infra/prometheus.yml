@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+
+  - job_name: 'api-gateway'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api-gateway:4000']
+
+  # gRPC 서비스들: management.server.port 설정 기준
+  - job_name: 'identity'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['identity:8081']
+
+  - job_name: 'pet-profile'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['pet-profile:8082']
+
+  - job_name: 'walks'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['walks:8083']
+
+  - job_name: 'social'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['social:8084']
+
+  - job_name: 'notification'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['notification:8085']

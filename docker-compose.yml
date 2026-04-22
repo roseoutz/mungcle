@@ -1,0 +1,255 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # Infrastructure
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mungcle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: mungcle-kafka-cluster-001
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: mungcle
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    profiles:
+      - debug
+
+  # ============================================================
+  # Observability
+  # ============================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./infra/otel-collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./infra/tempo-config.yaml:/etc/tempo/tempo.yaml
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+
+  # ============================================================
+  # Application Services
+  # ============================================================
+  identity:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: identity
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mungcle
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      OTEL_HOST: otel-collector
+      TSID_NODE: 2
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - app
+
+  pet-profile:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: pet-profile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mungcle
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      OTEL_HOST: otel-collector
+      TSID_NODE: 3
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - app
+
+  walks:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: walks
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mungcle
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP: kafka:9092
+      IDENTITY_HOST: identity
+      PET_PROFILE_HOST: pet-profile
+      OTEL_HOST: otel-collector
+      TSID_NODE: 4
+    ports:
+      - "50053:50053"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    profiles:
+      - app
+
+  social:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: social
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mungcle
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP: kafka:9092
+      IDENTITY_HOST: identity
+      PET_PROFILE_HOST: pet-profile
+      WALKS_HOST: walks
+      OTEL_HOST: otel-collector
+      TSID_NODE: 5
+    ports:
+      - "50054:50054"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    profiles:
+      - app
+
+  notification:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: notification
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mungcle
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP: kafka:9092
+      IDENTITY_HOST: identity
+      OTEL_HOST: otel-collector
+      TSID_NODE: 6
+    ports:
+      - "50055:50055"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    profiles:
+      - app
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+    environment:
+      IDENTITY_HOST: identity
+      PET_PROFILE_HOST: pet-profile
+      WALKS_HOST: walks
+      SOCIAL_HOST: social
+      NOTIFICATION_HOST: notification
+      OTEL_HOST: otel-collector
+      JWT_SECRET: mungcle-dev-secret-key-change-in-production
+    ports:
+      - "4000:4000"
+    depends_on:
+      - identity
+      - pet-profile
+      - walks
+      - social
+      - notification
+    profiles:
+      - app
+
+volumes:
+  postgres-data:
+  tempo-data:
+  grafana-data:
