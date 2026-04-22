@@ -1,0 +1,95 @@
+package com.mungcle.gateway.api
+
+import com.mungcle.gateway.dto.CreateDogRequest
+import com.mungcle.gateway.dto.DogResponse
+import com.mungcle.gateway.dto.UpdateDogRequest
+import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
+import com.mungcle.gateway.infrastructure.security.AuthUser
+import com.mungcle.proto.petprofile.v1.DogInfo
+import com.mungcle.proto.petprofile.v1.DogSize
+import jakarta.validation.Valid
+import kotlinx.coroutines.runBlocking
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/api/dogs")
+class DogController(private val petProfileClient: PetProfileClient) {
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createDog(@AuthUser userId: Long, @Valid @RequestBody req: CreateDogRequest): DogResponse = runBlocking {
+        petProfileClient.createDog(
+            ownerId = userId,
+            dogName = req.name,
+            dogBreed = req.breed,
+            dogSize = parseDogSize(req.size),
+            dogTemperaments = req.temperaments,
+            dogSociability = req.sociability,
+            photoPath = req.photoPath,
+            vaccinationPhotoPath = req.vaccinationPhotoPath,
+        ).toResponse()
+    }
+
+    @GetMapping
+    fun getDogs(@AuthUser userId: Long): List<DogResponse> = runBlocking {
+        petProfileClient.getDogsByOwner(userId).map { it.toResponse() }
+    }
+
+    @GetMapping("/{id}")
+    fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse = runBlocking {
+        petProfileClient.getDog(id).toResponse()
+    }
+
+    @PatchMapping("/{id}")
+    fun updateDog(
+        @AuthUser userId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody req: UpdateDogRequest,
+    ): DogResponse = runBlocking {
+        petProfileClient.updateDog(
+            dogId = id,
+            requesterId = userId,
+            dogName = req.name,
+            dogBreed = req.breed,
+            dogSize = req.size?.let { parseDogSize(it) },
+            dogTemperaments = req.temperaments,
+            dogSociability = req.sociability,
+            photoPath = req.photoPath,
+            vaccinationPhotoPath = req.vaccinationPhotoPath,
+        ).toResponse()
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteDog(@AuthUser userId: Long, @PathVariable id: Long): Unit = runBlocking {
+        petProfileClient.deleteDog(dogId = id, ownerId = userId)
+    }
+
+    private fun parseDogSize(size: String): DogSize = when (size.uppercase()) {
+        "SMALL" -> DogSize.DOG_SIZE_SMALL
+        "MEDIUM" -> DogSize.DOG_SIZE_MEDIUM
+        "LARGE" -> DogSize.DOG_SIZE_LARGE
+        else -> throw IllegalArgumentException("유효하지 않은 반려견 크기입니다: $size")
+    }
+
+    private fun DogInfo.toResponse() = DogResponse(
+        id = id,
+        ownerId = ownerId,
+        name = name,
+        breed = breed,
+        size = size.name.removePrefix("DOG_SIZE_"),
+        temperaments = temperamentsList,
+        sociability = sociability,
+        photoUrl = photoUrl,
+        vaccinationRegistered = vaccinationRegistered,
+    )
+}

@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation(project(":common:domain-common"))
     implementation(project(":common:kafka-common"))
+    implementation(project(":common:grpc-client"))
 
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -40,4 +41,5 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:${property("mockkVersion")}")
+    testImplementation("com.ninja-squad:springmockk:4.0.2")
 }

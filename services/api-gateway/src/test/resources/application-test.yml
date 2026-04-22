@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: api-gateway-test
+
+grpc:
+  client:
+    identity:
+      address: static://localhost:50051
+      negotiation-type: plaintext
+    pet-profile:
+      address: static://localhost:50052
+      negotiation-type: plaintext

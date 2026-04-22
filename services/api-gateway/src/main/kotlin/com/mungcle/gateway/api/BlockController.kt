@@ -1,0 +1,45 @@
+package com.mungcle.gateway.api
+
+import com.mungcle.gateway.dto.BlockResponse
+import com.mungcle.gateway.dto.CreateBlockRequest
+import com.mungcle.gateway.infrastructure.grpc.IdentityClient
+import com.mungcle.gateway.infrastructure.security.AuthUser
+import jakarta.validation.Valid
+import kotlinx.coroutines.runBlocking
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/api/blocks")
+class BlockController(private val identityClient: IdentityClient) {
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createBlock(@AuthUser userId: Long, @Valid @RequestBody req: CreateBlockRequest): Unit = runBlocking {
+        identityClient.createBlock(blockerId = userId, blockedId = req.blockedUserId)
+    }
+
+    @DeleteMapping("/{blockedUserId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteBlock(@AuthUser userId: Long, @PathVariable blockedUserId: Long): Unit = runBlocking {
+        identityClient.deleteBlock(blockerId = userId, blockedId = blockedUserId)
+    }
+
+    @GetMapping
+    fun listBlocks(@AuthUser userId: Long): List<BlockResponse> = runBlocking {
+        identityClient.listBlocks(userId).blocksList.map { block ->
+            BlockResponse(
+                blockedUserId = block.blockedUserId,
+                blockedNickname = block.blockedNickname,
+                createdAt = block.createdAt,
+            )
+        }
+    }
+}
