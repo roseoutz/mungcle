@@ -15,13 +15,19 @@ class GoogleAuthAdapter(
     override val provider = SocialProvider.GOOGLE
 
     override suspend fun getUserId(accessToken: String): String {
-        val response = webClient.get()
-            .uri("https://www.googleapis.com/oauth2/v3/userinfo")
-            .header("Authorization", "Bearer $accessToken")
-            .retrieve()
-            .awaitBody<Map<String, Any>>()
+        try {
+            val response = webClient.get()
+                .uri("https://www.googleapis.com/oauth2/v3/userinfo")
+                .header("Authorization", "Bearer $accessToken")
+                .retrieve()
+                .awaitBody<Map<String, Any>>()
 
-        return response["sub"]?.toString()
-            ?: throw SocialAuthFailedException(provider, "사용자 ID를 가져올 수 없습니다")
+            return response["sub"]?.toString()
+                ?: throw SocialAuthFailedException(provider, "사용자 ID를 가져올 수 없습니다")
+        } catch (e: SocialAuthFailedException) {
+            throw e
+        } catch (e: Exception) {
+            throw SocialAuthFailedException(provider, "인증 서버 통신 실패")
+        }
     }
 }

@@ -15,17 +15,23 @@ class NaverAuthAdapter(
     override val provider = SocialProvider.NAVER
 
     override suspend fun getUserId(accessToken: String): String {
-        val response = webClient.get()
-            .uri("https://openapi.naver.com/v1/nid/me")
-            .header("Authorization", "Bearer $accessToken")
-            .retrieve()
-            .awaitBody<Map<String, Any>>()
+        try {
+            val response = webClient.get()
+                .uri("https://openapi.naver.com/v1/nid/me")
+                .header("Authorization", "Bearer $accessToken")
+                .retrieve()
+                .awaitBody<Map<String, Any>>()
 
-        @Suppress("UNCHECKED_CAST")
-        val responseMap = response["response"] as? Map<String, Any>
-            ?: throw SocialAuthFailedException(provider, "네이버 API 응답 형식 오류")
+            @Suppress("UNCHECKED_CAST")
+            val responseMap = response["response"] as? Map<String, Any>
+                ?: throw SocialAuthFailedException(provider, "네이버 API 응답 형식 오류")
 
-        return responseMap["id"]?.toString()
-            ?: throw SocialAuthFailedException(provider, "사용자 ID를 가져올 수 없습니다")
+            return responseMap["id"]?.toString()
+                ?: throw SocialAuthFailedException(provider, "사용자 ID를 가져올 수 없습니다")
+        } catch (e: SocialAuthFailedException) {
+            throw e
+        } catch (e: Exception) {
+            throw SocialAuthFailedException(provider, "인증 서버 통신 실패")
+        }
     }
 }

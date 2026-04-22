@@ -96,19 +96,25 @@ class AuthenticateSocialCommandHandlerTest {
     }
 
     @Test
-    fun `애플 신규 가입 — 사용자 저장 후 JWT 반환`() = runTest {
-        val socialId = "apple-sub-123"
-        val newUser = fakeUser(SocialProvider.APPLE, socialId)
-        coEvery { userRepository.findBySocialProviderAndSocialId(SocialProvider.APPLE, socialId) } returns null
-        coEvery { userRepository.save(any()) } returns newUser
-        every { jwtPort.generateToken(1L) } returns "jwt-token"
-
-        val result = handler.execute(
-            AuthenticateSocialUseCase.Command(SocialProvider.APPLE, "apple-id-token")
+    fun `애플 로그인 — 준비 중 SocialAuthFailedException`() = runTest {
+        val appleAdapterThrows: SocialAuthPort = mockk {
+            every { provider } returns SocialProvider.APPLE
+            coEvery { getUserId(any()) } throws
+                com.mungcle.identity.domain.exception.SocialAuthFailedException(
+                    SocialProvider.APPLE, "Apple 로그인은 준비 중입니다"
+                )
+        }
+        val handlerWithRealApple = AuthenticateSocialCommandHandler(
+            socialAuthAdapters = listOf(kakaoAdapter, naverAdapter, appleAdapterThrows, googleAdapter),
+            userRepository = userRepository,
+            jwtPort = jwtPort,
         )
 
-        assertEquals("jwt-token", result.accessToken)
-        coVerify { userRepository.save(any()) }
+        assertThrows<com.mungcle.identity.domain.exception.SocialAuthFailedException> {
+            handlerWithRealApple.execute(
+                AuthenticateSocialUseCase.Command(SocialProvider.APPLE, "apple-id-token")
+            )
+        }
     }
 
     @Test

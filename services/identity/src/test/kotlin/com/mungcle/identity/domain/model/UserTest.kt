@@ -1,9 +1,11 @@
 package com.mungcle.identity.domain.model
 
 import com.mungcle.identity.domain.exception.InvalidNicknameException
+import com.mungcle.identity.domain.model.SocialProvider
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class UserTest {
 
@@ -90,5 +92,22 @@ class UserTest {
     @Test
     fun `공백과 대소문자 동시 정규화`() {
         assertEquals("user@domain.com", User.normalizeEmail("  User@Domain.Com  "))
+    }
+
+    // ─── softDelete ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `softDelete — socialProvider null로 익명화`() {
+        val user = User(
+            id = 42L,
+            socialProvider = SocialProvider.KAKAO,
+            socialId = "kakao-123",
+            nickname = "테스트유저",
+        )
+        val deleted = user.softDelete()
+        assertNull(deleted.socialProvider)
+        assertNull(deleted.socialId)
+        assertEquals("deleted_42@", deleted.email)
+        assertEquals("탈퇴한 사용자", deleted.nickname)
     }
 }

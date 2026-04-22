@@ -24,6 +24,7 @@ data class User(
     /** 회원 탈퇴 소프트 삭제 — 개인정보 익명화 */
     fun softDelete(): User = copy(
         email = "deleted_${id}@",
+        socialProvider = null,
         socialId = null,
         nickname = "탈퇴한 사용자",
         deletedAt = Instant.now(),

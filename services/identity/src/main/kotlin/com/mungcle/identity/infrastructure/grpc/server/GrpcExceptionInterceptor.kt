@@ -6,6 +6,8 @@ import com.mungcle.identity.domain.exception.InvalidCredentialsException
 import com.mungcle.identity.domain.exception.InvalidNicknameException
 import com.mungcle.identity.domain.exception.InvalidReportReasonException
 import com.mungcle.identity.domain.exception.ReportSelfException
+import com.mungcle.identity.domain.exception.SocialAuthFailedException
+import com.mungcle.identity.domain.exception.UnsupportedProviderException
 import com.mungcle.identity.domain.exception.UserNotFoundException
 import io.grpc.ForwardingServerCallListener
 import io.grpc.Metadata
@@ -48,6 +50,8 @@ class GrpcExceptionInterceptor : ServerInterceptor {
             is BlockSelfException -> Status.INVALID_ARGUMENT.withDescription(e.message)
             is ReportSelfException -> Status.INVALID_ARGUMENT.withDescription(e.message)
             is InvalidReportReasonException -> Status.INVALID_ARGUMENT.withDescription(e.message)
+            is UnsupportedProviderException -> Status.INVALID_ARGUMENT.withDescription(e.message)
+            is SocialAuthFailedException -> Status.UNAUTHENTICATED.withDescription(e.message)
             else -> Status.INTERNAL.withDescription(e.message)
         }
         call.close(status, headers)
