@@ -21,7 +21,7 @@ class ReportController(private val identityClient: IdentityClient) {
     fun createReport(@AuthUser userId: Long, @Valid @RequestBody req: CreateReportRequest): Unit = runBlocking {
         identityClient.createReport(
             reporterId = userId,
-            reportedId = req.reportedUserId,
+            reportedId = req.reportedUserId!!, // validated non-null by @NotNull
             reason = req.reason,
         )
     }
