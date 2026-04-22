@@ -1,6 +1,6 @@
 package com.mungcle.walks.infrastructure.persistence
 
-import com.mungcle.walks.domain.model.GridCell
+import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.model.WalkType

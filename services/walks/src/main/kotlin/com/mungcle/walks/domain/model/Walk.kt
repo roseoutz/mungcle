@@ -1,5 +1,6 @@
 package com.mungcle.walks.domain.model
 
+import com.mungcle.common.domain.GridCell
 import java.time.Instant
 
 /**
@@ -19,8 +20,8 @@ data class Walk(
     /** 만료 여부 확인 */
     fun isExpired(now: Instant): Boolean = now.isAfter(endsAt)
 
-    /** OPEN 산책인지 확인 */
-    fun isOpen(): Boolean = type == WalkType.OPEN
+    /** OPEN 타입이고 ACTIVE 상태인 산책인지 확인 */
+    fun isOpen(): Boolean = type == WalkType.OPEN && status == WalkStatus.ACTIVE
 
     /** 산책 종료 처리 -- 새 복사본 반환 (endsAt을 실제 종료 시각으로 업데이트) */
     fun end(now: Instant): Walk = copy(status = WalkStatus.ENDED, endsAt = now)

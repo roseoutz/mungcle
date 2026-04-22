@@ -1,7 +1,7 @@
 package com.mungcle.walks.application.command
 
+import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.exception.WalkAlreadyActiveException
-import com.mungcle.walks.domain.model.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.port.`in`.StartWalkUseCase
@@ -17,7 +17,7 @@ class StartWalkCommandHandler(
 ) : StartWalkUseCase {
 
     @Transactional
-    override suspend fun execute(command: StartWalkUseCase.Command): Walk {
+    override fun execute(command: StartWalkUseCase.Command): Walk {
         val existing = walkRepository.findActiveByDogId(command.dogId)
         if (existing != null) {
             throw WalkAlreadyActiveException(command.dogId)

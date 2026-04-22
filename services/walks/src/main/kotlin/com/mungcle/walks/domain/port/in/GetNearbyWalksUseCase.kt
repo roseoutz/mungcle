@@ -1,6 +1,6 @@
 package com.mungcle.walks.domain.port.`in`
 
-import com.mungcle.walks.application.dto.NearbyWalkInfo
+import com.mungcle.walks.domain.model.NearbyWalkInfo
 
 interface GetNearbyWalksUseCase {
     suspend fun execute(query: Query): List<NearbyWalkInfo>

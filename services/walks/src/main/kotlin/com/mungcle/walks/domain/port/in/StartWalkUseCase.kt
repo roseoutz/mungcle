@@ -4,7 +4,7 @@ import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkType
 
 interface StartWalkUseCase {
-    suspend fun execute(command: Command): Walk
+    fun execute(command: Command): Walk
 
     data class Command(
         val userId: Long,

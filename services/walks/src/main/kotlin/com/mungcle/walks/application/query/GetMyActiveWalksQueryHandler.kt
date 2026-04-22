@@ -10,6 +10,6 @@ class GetMyActiveWalksQueryHandler(
     private val walkRepository: WalkRepositoryPort,
 ) : GetMyActiveWalksUseCase {
 
-    override suspend fun execute(userId: Long): List<Walk> =
+    override fun execute(userId: Long): List<Walk> =
         walkRepository.findActiveByUserId(userId)
 }

@@ -1,17 +1,16 @@
 package com.mungcle.walks.application.command
 
+import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.exception.WalkAlreadyActiveException
-import com.mungcle.walks.domain.model.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.StartWalkUseCase
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
-import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.test.runTest
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
@@ -32,10 +31,10 @@ class StartWalkCommandHandlerTest {
     )
 
     @Test
-    fun `정상 산책 시작`() = runTest {
-        coEvery { walkRepository.findActiveByDogId(100L) } returns null
+    fun `정상 산책 시작`() {
+        every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
-        coEvery { walkRepository.save(capture(walkSlot)) } answers {
+        every { walkRepository.save(capture(walkSlot)) } answers {
             walkSlot.captured.copy(id = 1L)
         }
 
@@ -46,14 +45,14 @@ class StartWalkCommandHandlerTest {
         assertEquals(1L, result.userId)
         assertEquals(WalkType.OPEN, result.type)
         assertEquals(WalkStatus.ACTIVE, result.status)
-        coVerify { walkRepository.save(any()) }
+        verify { walkRepository.save(any()) }
     }
 
     @Test
-    fun `산책 시작 시 endsAt은 60분 후`() = runTest {
-        coEvery { walkRepository.findActiveByDogId(100L) } returns null
+    fun `산책 시작 시 endsAt은 60분 후`() {
+        every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
-        coEvery { walkRepository.save(capture(walkSlot)) } answers {
+        every { walkRepository.save(capture(walkSlot)) } answers {
             walkSlot.captured.copy(id = 1L)
         }
 
@@ -65,10 +64,10 @@ class StartWalkCommandHandlerTest {
     }
 
     @Test
-    fun `GPS 좌표가 GridCell로 변환되어 저장`() = runTest {
-        coEvery { walkRepository.findActiveByDogId(100L) } returns null
+    fun `GPS 좌표가 GridCell로 변환되어 저장`() {
+        every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
-        coEvery { walkRepository.save(capture(walkSlot)) } answers {
+        every { walkRepository.save(capture(walkSlot)) } answers {
             walkSlot.captured.copy(id = 1L)
         }
 
@@ -79,7 +78,7 @@ class StartWalkCommandHandlerTest {
     }
 
     @Test
-    fun `이미 활성 산책이 있으면 WalkAlreadyActiveException`() = runTest {
+    fun `이미 활성 산책이 있으면 WalkAlreadyActiveException`() {
         val existingWalk = Walk(
             id = 99L,
             dogId = 100L,
@@ -90,7 +89,7 @@ class StartWalkCommandHandlerTest {
             startedAt = Instant.now(),
             endsAt = Instant.now().plus(Duration.ofMinutes(60)),
         )
-        coEvery { walkRepository.findActiveByDogId(100L) } returns existingWalk
+        every { walkRepository.findActiveByDogId(100L) } returns existingWalk
 
         assertThrows<WalkAlreadyActiveException> {
             handler.execute(command)

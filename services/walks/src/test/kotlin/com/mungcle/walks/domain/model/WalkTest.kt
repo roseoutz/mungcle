@@ -1,5 +1,6 @@
 package com.mungcle.walks.domain.model
 
+import com.mungcle.common.domain.GridCell
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant

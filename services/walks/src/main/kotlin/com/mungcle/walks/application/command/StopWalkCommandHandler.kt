@@ -17,7 +17,7 @@ class StopWalkCommandHandler(
 ) : StopWalkUseCase {
 
     @Transactional
-    override suspend fun execute(command: StopWalkUseCase.Command): Walk {
+    override fun execute(command: StopWalkUseCase.Command): Walk {
         val walk = walkRepository.findById(command.walkId)
             ?: throw WalkNotFoundException(command.walkId)
 

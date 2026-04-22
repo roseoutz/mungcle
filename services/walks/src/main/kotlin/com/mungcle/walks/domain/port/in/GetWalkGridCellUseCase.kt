@@ -1,7 +1,7 @@
 package com.mungcle.walks.domain.port.`in`
 
-import com.mungcle.walks.domain.model.GridCell
+import com.mungcle.common.domain.GridCell
 
 interface GetWalkGridCellUseCase {
-    suspend fun execute(walkId: Long): GridCell
+    fun execute(walkId: Long): GridCell
 }

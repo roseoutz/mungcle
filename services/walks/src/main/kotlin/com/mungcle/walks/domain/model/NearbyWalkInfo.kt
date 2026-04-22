@@ -1,4 +1,4 @@
-package com.mungcle.walks.application.dto
+package com.mungcle.walks.domain.model
 
 import java.time.Instant
 

@@ -1,5 +1,6 @@
 package com.mungcle.walks.infrastructure.grpc.server
 
+import com.mungcle.walks.domain.exception.WalkException
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.GetMyActiveWalksUseCase
 import com.mungcle.walks.domain.port.`in`.GetNearbyWalksUseCase
@@ -45,46 +46,58 @@ class WalksGrpcService(
                 Status.INVALID_ARGUMENT.withDescription("유효하지 않은 산책 타입입니다")
             )
         }
-        val walk = startWalkUseCase.execute(
-            StartWalkUseCase.Command(
-                userId = request.userId,
-                dogId = request.dogId,
-                type = walkType,
-                lat = request.lat,
-                lng = request.lng,
+        try {
+            val walk = startWalkUseCase.execute(
+                StartWalkUseCase.Command(
+                    userId = request.userId,
+                    dogId = request.dogId,
+                    type = walkType,
+                    lat = request.lat,
+                    lng = request.lng,
+                )
             )
-        )
-        return walk.toWalkInfo()
+            return walk.toWalkInfo()
+        } catch (e: WalkException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun stopWalk(request: StopWalkRequest): WalkInfo {
-        val walk = stopWalkUseCase.execute(
-            StopWalkUseCase.Command(
-                walkId = request.walkId,
-                userId = request.userId,
+        try {
+            val walk = stopWalkUseCase.execute(
+                StopWalkUseCase.Command(
+                    walkId = request.walkId,
+                    userId = request.userId,
+                )
             )
-        )
-        return walk.toWalkInfo()
+            return walk.toWalkInfo()
+        } catch (e: WalkException) {
+            throw e.toStatusException()
+        }
     }
 
     override suspend fun getNearbyWalks(request: GetNearbyWalksRequest): GetNearbyWalksResponse {
-        val results = getNearbyWalksUseCase.execute(
-            GetNearbyWalksUseCase.Query(
-                gridCell = request.gridCell,
-                userId = request.userId,
-                blockedUserIds = request.blockedUserIdsList,
+        try {
+            val results = getNearbyWalksUseCase.execute(
+                GetNearbyWalksUseCase.Query(
+                    gridCell = request.gridCell,
+                    userId = request.userId,
+                    blockedUserIds = request.blockedUserIdsList,
+                )
             )
-        )
-        return getNearbyWalksResponse {
-            walks += results.map { info ->
-                nearbyWalkInfo {
-                    walkId = info.walkId
-                    dogId = info.dogId
-                    userId = info.userId
-                    gridDistance = info.gridDistance
-                    startedAt = info.startedAt.epochSecond
+            return getNearbyWalksResponse {
+                walks += results.map { info ->
+                    nearbyWalkInfo {
+                        walkId = info.walkId
+                        dogId = info.dogId
+                        userId = info.userId
+                        gridDistance = info.gridDistance
+                        startedAt = info.startedAt.epochSecond
+                    }
                 }
             }
+        } catch (e: WalkException) {
+            throw e.toStatusException()
         }
     }
 
@@ -96,9 +109,13 @@ class WalksGrpcService(
     }
 
     override suspend fun getWalkGridCell(request: GetWalkGridCellRequest): GetWalkGridCellResponse {
-        val gridCell = getWalkGridCellUseCase.execute(request.walkId)
-        return getWalkGridCellResponse {
-            this.gridCell = gridCell.value
+        try {
+            val gridCell = getWalkGridCellUseCase.execute(request.walkId)
+            return getWalkGridCellResponse {
+                this.gridCell = gridCell.value
+            }
+        } catch (e: WalkException) {
+            throw e.toStatusException()
         }
     }
 

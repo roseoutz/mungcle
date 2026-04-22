@@ -1,18 +1,17 @@
 package com.mungcle.walks.application.command
 
+import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.exception.WalkAlreadyEndedException
 import com.mungcle.walks.domain.exception.WalkNotFoundException
 import com.mungcle.walks.domain.exception.WalkNotOwnedException
-import com.mungcle.walks.domain.model.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.StopWalkUseCase
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
-import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.test.runTest
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
@@ -37,19 +36,19 @@ class StopWalkCommandHandlerTest {
     )
 
     @Test
-    fun `정상 산책 종료`() = runTest {
-        coEvery { walkRepository.findById(1L) } returns activeWalk
-        coEvery { walkRepository.save(any()) } answers { firstArg() }
+    fun `정상 산책 종료`() {
+        every { walkRepository.findById(1L) } returns activeWalk
+        every { walkRepository.save(any()) } answers { firstArg() }
 
         val result = handler.execute(StopWalkUseCase.Command(walkId = 1L, userId = 10L))
 
         assertEquals(WalkStatus.ENDED, result.status)
-        coVerify { walkRepository.save(any()) }
+        verify { walkRepository.save(any()) }
     }
 
     @Test
-    fun `존재하지 않는 산책은 WalkNotFoundException`() = runTest {
-        coEvery { walkRepository.findById(999L) } returns null
+    fun `존재하지 않는 산책은 WalkNotFoundException`() {
+        every { walkRepository.findById(999L) } returns null
 
         assertThrows<WalkNotFoundException> {
             handler.execute(StopWalkUseCase.Command(walkId = 999L, userId = 10L))
@@ -57,8 +56,8 @@ class StopWalkCommandHandlerTest {
     }
 
     @Test
-    fun `타인의 산책 종료 시 WalkNotOwnedException`() = runTest {
-        coEvery { walkRepository.findById(1L) } returns activeWalk
+    fun `타인의 산책 종료 시 WalkNotOwnedException`() {
+        every { walkRepository.findById(1L) } returns activeWalk
 
         assertThrows<WalkNotOwnedException> {
             handler.execute(StopWalkUseCase.Command(walkId = 1L, userId = 999L))
@@ -66,9 +65,9 @@ class StopWalkCommandHandlerTest {
     }
 
     @Test
-    fun `이미 종료된 산책은 WalkAlreadyEndedException`() = runTest {
+    fun `이미 종료된 산책은 WalkAlreadyEndedException`() {
         val endedWalk = activeWalk.copy(status = WalkStatus.ENDED)
-        coEvery { walkRepository.findById(1L) } returns endedWalk
+        every { walkRepository.findById(1L) } returns endedWalk
 
         assertThrows<WalkAlreadyEndedException> {
             handler.execute(StopWalkUseCase.Command(walkId = 1L, userId = 10L))

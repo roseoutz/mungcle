@@ -1,7 +1,7 @@
 package com.mungcle.walks.application.query
 
-import com.mungcle.walks.application.dto.NearbyWalkInfo
-import com.mungcle.walks.domain.model.GridCell
+import com.mungcle.common.domain.GridCell
+import com.mungcle.walks.domain.model.NearbyWalkInfo
 import com.mungcle.walks.domain.port.`in`.GetNearbyWalksUseCase
 import com.mungcle.walks.domain.port.out.IdentityPort
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort

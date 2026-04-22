@@ -1,6 +1,6 @@
 package com.mungcle.walks.infrastructure.persistence
 
-import com.mungcle.walks.domain.model.GridCell
+import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
 import org.springframework.stereotype.Repository
@@ -10,22 +10,22 @@ class WalkRepositoryAdapter(
     private val springDataRepository: WalkSpringDataRepository,
 ) : WalkRepositoryPort {
 
-    override suspend fun save(walk: Walk): Walk {
+    override fun save(walk: Walk): Walk {
         val entity = WalkMapper.toEntity(walk)
         val saved = springDataRepository.save(entity)
         return WalkMapper.toDomain(saved)
     }
 
-    override suspend fun findById(id: Long): Walk? =
+    override fun findById(id: Long): Walk? =
         springDataRepository.findById(id).orElse(null)?.let(WalkMapper::toDomain)
 
-    override suspend fun findActiveByDogId(dogId: Long): Walk? =
+    override fun findActiveByDogId(dogId: Long): Walk? =
         springDataRepository.findActiveByDogId(dogId).orElse(null)?.let(WalkMapper::toDomain)
 
-    override suspend fun findActiveByUserId(userId: Long): List<Walk> =
+    override fun findActiveByUserId(userId: Long): List<Walk> =
         springDataRepository.findActiveByUserId(userId).map(WalkMapper::toDomain)
 
-    override suspend fun findActiveOpenByGridCells(gridCells: List<GridCell>): List<Walk> =
+    override fun findActiveOpenByGridCells(gridCells: List<GridCell>): List<Walk> =
         springDataRepository.findActiveOpenByGridCells(gridCells.map { it.value })
             .map(WalkMapper::toDomain)
 }
