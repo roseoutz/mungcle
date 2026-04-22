@@ -4,6 +4,7 @@ import com.mungcle.common.domain.GridCell
 import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
 import org.springframework.stereotype.Repository
+import java.time.Instant
 
 @Repository
 class WalkRepositoryAdapter(
@@ -28,4 +29,15 @@ class WalkRepositoryAdapter(
     override fun findActiveOpenByGridCells(gridCells: List<GridCell>): List<Walk> =
         springDataRepository.findActiveOpenByGridCells(gridCells.map { it.value })
             .map(WalkMapper::toDomain)
+
+    override fun findExpiredActive(now: Instant): List<Walk> =
+        springDataRepository.findByStatusAndEndsAtBefore(now).map(WalkMapper::toDomain)
+
+    override fun findDogIdsByUserIds(userIds: List<Long>): List<Long> =
+        springDataRepository.findDogIdsByUserIds(userIds)
+
+    override fun saveAll(walks: List<Walk>): List<Walk> {
+        val entities = walks.map { WalkMapper.toEntity(it) }
+        return springDataRepository.saveAll(entities).map { WalkMapper.toDomain(it) }
+    }
 }

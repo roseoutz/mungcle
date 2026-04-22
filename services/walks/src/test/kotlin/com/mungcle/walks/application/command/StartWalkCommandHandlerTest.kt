@@ -6,6 +6,7 @@ import com.mungcle.walks.domain.model.Walk
 import com.mungcle.walks.domain.model.WalkStatus
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.StartWalkUseCase
+import com.mungcle.walks.domain.port.out.WalkPatternRepositoryPort
 import com.mungcle.walks.domain.port.out.WalkRepositoryPort
 import io.mockk.every
 import io.mockk.mockk
@@ -20,7 +21,8 @@ import kotlin.test.assertEquals
 class StartWalkCommandHandlerTest {
 
     private val walkRepository: WalkRepositoryPort = mockk()
-    private val handler = StartWalkCommandHandler(walkRepository)
+    private val walkPatternRepository: WalkPatternRepositoryPort = mockk(relaxed = true)
+    private val handler = StartWalkCommandHandler(walkRepository, walkPatternRepository)
 
     private val command = StartWalkUseCase.Command(
         userId = 1L,

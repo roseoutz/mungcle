@@ -3,6 +3,7 @@ package com.mungcle.walks.infrastructure.grpc.server
 import com.mungcle.walks.domain.exception.WalkException
 import com.mungcle.walks.domain.model.WalkType
 import com.mungcle.walks.domain.port.`in`.GetMyActiveWalksUseCase
+import com.mungcle.walks.domain.port.`in`.GetNearbyPatternsUseCase
 import com.mungcle.walks.domain.port.`in`.GetNearbyWalksUseCase
 import com.mungcle.walks.domain.port.`in`.GetWalkGridCellUseCase
 import com.mungcle.walks.domain.port.`in`.StartWalkUseCase
@@ -20,10 +21,12 @@ import com.mungcle.proto.walks.v1.StopWalkRequest
 import com.mungcle.proto.walks.v1.WalkInfo
 import com.mungcle.proto.walks.v1.WalksServiceGrpcKt
 import com.mungcle.proto.walks.v1.getMyActiveWalksResponse
+import com.mungcle.proto.walks.v1.getNearbyPatternsResponse
 import com.mungcle.proto.walks.v1.getNearbyWalksResponse
 import com.mungcle.proto.walks.v1.getWalkGridCellResponse
 import com.mungcle.proto.walks.v1.nearbyWalkInfo
 import com.mungcle.proto.walks.v1.walkInfo
+import com.mungcle.proto.walks.v1.walkPatternInfo
 import com.mungcle.walks.domain.model.Walk
 import io.grpc.Status
 import io.grpc.StatusException
@@ -36,6 +39,7 @@ class WalksGrpcService(
     private val getNearbyWalksUseCase: GetNearbyWalksUseCase,
     private val getMyActiveWalksUseCase: GetMyActiveWalksUseCase,
     private val getWalkGridCellUseCase: GetWalkGridCellUseCase,
+    private val getNearbyPatternsUseCase: GetNearbyPatternsUseCase,
 ) : WalksServiceGrpcKt.WalksServiceCoroutineImplBase() {
 
     override suspend fun startWalk(request: StartWalkRequest): WalkInfo {
@@ -120,9 +124,26 @@ class WalksGrpcService(
     }
 
     override suspend fun getNearbyPatterns(request: GetNearbyPatternsRequest): GetNearbyPatternsResponse {
-        throw StatusException(
-            Status.UNIMPLEMENTED.withDescription("Task 05에서 구현 예정")
-        )
+        try {
+            val results = getNearbyPatternsUseCase.execute(
+                GetNearbyPatternsUseCase.Query(
+                    gridCell = request.gridCell,
+                    userId = request.userId,
+                    blockedUserIds = request.blockedUserIdsList,
+                )
+            )
+            return getNearbyPatternsResponse {
+                patterns += results.map { pattern ->
+                    walkPatternInfo {
+                        dogId = pattern.dogId
+                        typicalHour = pattern.hourOfDay
+                        countLast14Days = pattern.walkCount
+                    }
+                }
+            }
+        } catch (e: WalkException) {
+            throw e.toStatusException()
+        }
     }
 
     private fun Walk.toWalkInfo(): WalkInfo = walkInfo {
