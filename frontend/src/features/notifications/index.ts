@@ -1,4 +1,5 @@
 export { NotificationList } from './components/NotificationList';
+export type { NotificationListProps } from './components/NotificationList';
 export { NotificationCard } from './components/NotificationCard';
 export { useNotifications } from './hooks/useNotifications';
 export { listNotifications, markRead, markAllRead } from './services/notifications.api';

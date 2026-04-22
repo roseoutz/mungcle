@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,16 +10,27 @@ import {
 import { colors, spacing } from '../../../constants/theme';
 import { typography } from '../../../constants/typography';
 import { NotificationCard } from './NotificationCard';
-import { useNotifications } from '../hooks/useNotifications';
+import type { NotificationResponse } from '../types/notifications.types';
 
-export function NotificationList() {
-  const { notifications, loading, error, hasMore, refresh, loadMore, handleMarkRead } =
-    useNotifications();
+export interface NotificationListProps {
+  notifications: NotificationResponse[];
+  loading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  onRefresh: () => void;
+  onLoadMore: () => void;
+  onMarkRead: (id: number) => void;
+}
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
+export function NotificationList({
+  notifications,
+  loading,
+  error,
+  hasMore,
+  onRefresh,
+  onLoadMore,
+  onMarkRead,
+}: NotificationListProps) {
   // loading 상태
   if (loading && notifications.length === 0) {
     return (
@@ -55,15 +66,15 @@ export function NotificationList() {
       data={notifications}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => (
-        <NotificationCard notification={item} onMarkRead={handleMarkRead} />
+        <NotificationCard notification={item} onMarkRead={onMarkRead} />
       )}
       contentContainerStyle={styles.list}
-      onEndReached={hasMore ? loadMore : undefined}
+      onEndReached={hasMore ? onLoadMore : undefined}
       onEndReachedThreshold={0.3}
       refreshControl={
         <RefreshControl
           refreshing={loading && notifications.length > 0}
-          onRefresh={refresh}
+          onRefresh={onRefresh}
           tintColor={colors.primary}
         />
       }
