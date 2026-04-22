@@ -32,6 +32,8 @@ include("common:grpc-client")
 
 // Services
 include("services:api-gateway")
+include("services:identity")
 include("services:pet-profile")
 include("services:walks")
 include("services:social")
+include("services:notification")
