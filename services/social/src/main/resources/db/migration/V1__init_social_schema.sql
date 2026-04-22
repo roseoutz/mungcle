@@ -8,7 +8,7 @@ CREATE TABLE greetings (
     receiver_user_id  BIGINT NOT NULL,
     receiver_dog_id   BIGINT NOT NULL,
     receiver_walk_id  BIGINT NOT NULL,
-    status            VARCHAR(10) NOT NULL DEFAULT 'PENDING',
+    status            VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     responded_at      TIMESTAMPTZ,
     expires_at        TIMESTAMPTZ NOT NULL,

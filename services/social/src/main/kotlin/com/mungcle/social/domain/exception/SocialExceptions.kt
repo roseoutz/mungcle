@@ -13,4 +13,6 @@ class GreetingNotPendingException(id: Long) : SocialException("Greeting $id is n
 
 class ForbiddenBlockedException(userId: Long) : SocialException("User $userId is blocked")
 
+class SelfGreetingException(userId: Long) : SocialException("User $userId cannot greet themselves")
+
 class GreetingAccessDeniedException(id: Long) : SocialException("Access denied to greeting $id")

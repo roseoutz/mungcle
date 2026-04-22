@@ -1,5 +1,6 @@
 package com.mungcle.social.domain.model
 
+import com.mungcle.social.domain.exception.GreetingNotPendingException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
@@ -60,10 +61,10 @@ class GreetingTest {
     }
 
     @Test
-    fun `accept — PENDING이 아니면 IllegalStateException`() {
+    fun `accept — PENDING이 아니면 GreetingNotPendingException`() {
         val accepted = pendingGreeting().accept(Instant.now())
 
-        assertThrows<IllegalStateException> {
+        assertThrows<GreetingNotPendingException> {
             accepted.accept(Instant.now())
         }
     }
@@ -72,6 +73,15 @@ class GreetingTest {
     fun `expire — EXPIRED 상태로 전이`() {
         val expired = pendingGreeting().expire()
         assertEquals(GreetingStatus.EXPIRED, expired.status)
+    }
+
+    @Test
+    fun `expire — PENDING이 아니면 GreetingNotPendingException`() {
+        val accepted = pendingGreeting().accept(Instant.now())
+
+        assertThrows<GreetingNotPendingException> {
+            accepted.expire()
+        }
     }
 
     @Test

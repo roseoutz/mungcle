@@ -38,7 +38,7 @@ open class GreetingEntity(
     open var receiverWalkId: Long = 0,
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 20)
     open var status: GreetingStatus = GreetingStatus.PENDING,
 
     @Column(name = "created_at", nullable = false)

@@ -3,7 +3,7 @@ package com.mungcle.social.domain.port.`in`
 import com.mungcle.social.domain.model.Greeting
 
 interface CreateGreetingUseCase {
-    fun execute(command: Command): Greeting
+    suspend fun execute(command: Command): Greeting
 
     data class Command(
         val senderUserId: Long,

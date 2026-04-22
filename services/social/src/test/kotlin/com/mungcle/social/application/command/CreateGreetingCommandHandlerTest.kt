@@ -2,6 +2,7 @@ package com.mungcle.social.application.command
 
 import com.mungcle.social.domain.exception.ForbiddenBlockedException
 import com.mungcle.social.domain.exception.GreetingDuplicateException
+import com.mungcle.social.domain.exception.SelfGreetingException
 import com.mungcle.social.domain.model.Greeting
 import com.mungcle.social.domain.model.GreetingStatus
 import com.mungcle.social.domain.port.`in`.CreateGreetingUseCase
@@ -43,7 +44,7 @@ class CreateGreetingCommandHandlerTest {
     private val walkInfo = WalksPort.WalkInfo(walkId = 300L, userId = 20L, dogId = 200L)
 
     @Test
-    fun `정상 인사 생성`() {
+    fun `정상 인사 생성`() = runTest {
         coEvery { walksPort.getWalk(300L) } returns walkInfo
         coEvery { identityPort.isBlocked(10L, 20L) } returns false
         every { greetingRepository.findBySenderAndWalk(10L, 300L) } returns null
@@ -62,16 +63,14 @@ class CreateGreetingCommandHandlerTest {
     }
 
     @Test
-    fun `expiresAt은 생성 시각으로부터 5분 후`() {
+    fun `expiresAt은 생성 시각으로부터 5분 후`() = runTest {
         coEvery { walksPort.getWalk(300L) } returns walkInfo
         coEvery { identityPort.isBlocked(10L, 20L) } returns false
         every { greetingRepository.findBySenderAndWalk(10L, 300L) } returns null
         val slot = slot<Greeting>()
         every { greetingRepository.save(capture(slot)) } answers { slot.captured.copy(id = 1L) }
 
-        val before = Instant.now()
         handler.execute(command)
-        val after = Instant.now()
 
         val saved = slot.captured
         val secondsUntilExpiry = saved.expiresAt.epochSecond - saved.createdAt.epochSecond
@@ -79,7 +78,7 @@ class CreateGreetingCommandHandlerTest {
     }
 
     @Test
-    fun `차단된 사용자 → ForbiddenBlockedException`() {
+    fun `차단된 사용자 → ForbiddenBlockedException`() = runTest {
         coEvery { walksPort.getWalk(300L) } returns walkInfo
         coEvery { identityPort.isBlocked(10L, 20L) } returns true
 
@@ -89,7 +88,7 @@ class CreateGreetingCommandHandlerTest {
     }
 
     @Test
-    fun `중복 인사 → GreetingDuplicateException`() {
+    fun `중복 인사 → GreetingDuplicateException`() = runTest {
         coEvery { walksPort.getWalk(300L) } returns walkInfo
         coEvery { identityPort.isBlocked(10L, 20L) } returns false
         val existing = Greeting(
@@ -105,6 +104,16 @@ class CreateGreetingCommandHandlerTest {
         every { greetingRepository.findBySenderAndWalk(10L, 300L) } returns existing
 
         assertThrows<GreetingDuplicateException> {
+            handler.execute(command)
+        }
+    }
+
+    @Test
+    fun `자기 자신에게 인사 → SelfGreetingException`() = runTest {
+        val selfWalkInfo = WalksPort.WalkInfo(walkId = 300L, userId = 10L, dogId = 100L)
+        coEvery { walksPort.getWalk(300L) } returns selfWalkInfo
+
+        assertThrows<SelfGreetingException> {
             handler.execute(command)
         }
     }

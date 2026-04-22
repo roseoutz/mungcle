@@ -1,5 +1,6 @@
 package com.mungcle.social.domain.model
 
+import com.mungcle.social.domain.exception.GreetingNotPendingException
 import java.time.Instant
 
 data class Greeting(
@@ -15,7 +16,7 @@ data class Greeting(
     val expiresAt: Instant,
 ) {
     fun accept(now: Instant): Greeting {
-        check(status == GreetingStatus.PENDING) { "Only PENDING greetings can be accepted" }
+        if (status != GreetingStatus.PENDING) throw GreetingNotPendingException(id)
         return copy(
             status = GreetingStatus.ACCEPTED,
             respondedAt = now,
@@ -23,7 +24,10 @@ data class Greeting(
         )
     }
 
-    fun expire(): Greeting = copy(status = GreetingStatus.EXPIRED)
+    fun expire(): Greeting {
+        if (status != GreetingStatus.PENDING) throw GreetingNotPendingException(id)
+        return copy(status = GreetingStatus.EXPIRED)
+    }
 
     fun isPending(): Boolean = status == GreetingStatus.PENDING
 
