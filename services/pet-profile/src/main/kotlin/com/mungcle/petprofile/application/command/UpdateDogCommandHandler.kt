@@ -19,15 +19,15 @@ class UpdateDogCommandHandler(
 
         dog.verifyOwnership(command.requesterId)
 
-        val updated = dog.copy(
-            name = command.name ?: dog.name,
-            breed = command.breed ?: dog.breed,
-            size = command.size ?: dog.size,
-            temperaments = command.temperaments ?: dog.temperaments,
-            sociability = command.sociability ?: dog.sociability,
-            photoPath = command.photoPath ?: dog.photoPath,
-            vaccinationPhotoPath = command.vaccinationPhotoPath ?: dog.vaccinationPhotoPath,
+        dog.update(
+            name = command.name,
+            breed = command.breed,
+            size = command.size,
+            temperaments = command.temperaments,
+            sociability = command.sociability,
+            photoPath = command.photoPath,
+            vaccinationPhotoPath = command.vaccinationPhotoPath,
         )
-        return dogRepository.save(updated)
+        return dogRepository.save(dog)
     }
 }

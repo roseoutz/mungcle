@@ -37,7 +37,17 @@ class StartWalkCommandHandlerTest {
         every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
         every { walkRepository.save(capture(walkSlot)) } answers {
-            walkSlot.captured.copy(id = 1L)
+            val captured = walkSlot.captured
+            Walk(
+                id = 1L,
+                dogId = captured.dogId,
+                userId = captured.userId,
+                type = captured.type,
+                gridCell = captured.gridCell,
+                status = captured.status,
+                startedAt = captured.startedAt,
+                endsAt = captured.endsAt,
+            )
         }
 
         val result = handler.execute(command)
@@ -55,7 +65,17 @@ class StartWalkCommandHandlerTest {
         every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
         every { walkRepository.save(capture(walkSlot)) } answers {
-            walkSlot.captured.copy(id = 1L)
+            val captured = walkSlot.captured
+            Walk(
+                id = 1L,
+                dogId = captured.dogId,
+                userId = captured.userId,
+                type = captured.type,
+                gridCell = captured.gridCell,
+                status = captured.status,
+                startedAt = captured.startedAt,
+                endsAt = captured.endsAt,
+            )
         }
 
         handler.execute(command)
@@ -70,7 +90,17 @@ class StartWalkCommandHandlerTest {
         every { walkRepository.findActiveByDogId(100L) } returns null
         val walkSlot = slot<Walk>()
         every { walkRepository.save(capture(walkSlot)) } answers {
-            walkSlot.captured.copy(id = 1L)
+            val captured = walkSlot.captured
+            Walk(
+                id = 1L,
+                dogId = captured.dogId,
+                userId = captured.userId,
+                type = captured.type,
+                gridCell = captured.gridCell,
+                status = captured.status,
+                startedAt = captured.startedAt,
+                endsAt = captured.endsAt,
+            )
         }
 
         handler.execute(command)

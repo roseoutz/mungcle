@@ -27,7 +27,8 @@ class CreateReportCommandHandler(
             val reported = userRepository.findById(reportedId)
                 ?: throw UserNotFoundException(reportedId)
             if (!reported.flaggedForReview) {
-                userRepository.save(reported.copy(flaggedForReview = true))
+                reported.flagForReview()
+                userRepository.save(reported)
             }
         }
     }

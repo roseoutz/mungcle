@@ -15,6 +15,7 @@ class UpdatePushTokenCommandHandler(
     override suspend fun execute(command: UpdatePushTokenUseCase.Command) {
         val user = userRepository.findById(command.userId)
             ?: throw UserNotFoundException(command.userId)
-        userRepository.save(user.copy(pushToken = command.pushToken))
+        user.changePushToken(command.pushToken)
+        userRepository.save(user)
     }
 }

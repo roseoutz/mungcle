@@ -50,7 +50,19 @@ class CreateGreetingCommandHandlerTest {
         every { greetingRepository.findBySenderAndWalk(10L, 300L) } returns null
         val slot = slot<Greeting>()
         every { greetingRepository.save(capture(slot)) } answers {
-            slot.captured.copy(id = 1L)
+            val g = slot.captured
+            Greeting(
+                id = 1L,
+                senderUserId = g.senderUserId,
+                senderDogId = g.senderDogId,
+                receiverUserId = g.receiverUserId,
+                receiverDogId = g.receiverDogId,
+                receiverWalkId = g.receiverWalkId,
+                status = g.status,
+                createdAt = g.createdAt,
+                respondedAt = g.respondedAt,
+                expiresAt = g.expiresAt,
+            )
         }
 
         val result = handler.execute(command)
@@ -68,7 +80,21 @@ class CreateGreetingCommandHandlerTest {
         coEvery { identityPort.isBlocked(10L, 20L) } returns false
         every { greetingRepository.findBySenderAndWalk(10L, 300L) } returns null
         val slot = slot<Greeting>()
-        every { greetingRepository.save(capture(slot)) } answers { slot.captured.copy(id = 1L) }
+        every { greetingRepository.save(capture(slot)) } answers {
+            val g = slot.captured
+            Greeting(
+                id = 1L,
+                senderUserId = g.senderUserId,
+                senderDogId = g.senderDogId,
+                receiverUserId = g.receiverUserId,
+                receiverDogId = g.receiverDogId,
+                receiverWalkId = g.receiverWalkId,
+                status = g.status,
+                createdAt = g.createdAt,
+                respondedAt = g.respondedAt,
+                expiresAt = g.expiresAt,
+            )
+        }
 
         handler.execute(command)
 
