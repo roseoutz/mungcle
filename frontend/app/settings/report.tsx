@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { createReport } from '../../src/features/settings';
 import { colors, spacing, borderRadius, touchTarget } from '../../src/constants/theme';
 import { typography } from '../../src/constants/typography';
@@ -24,9 +24,18 @@ const REPORT_REASONS = [
 
 export default function ReportScreen() {
   const router = useRouter();
+  const { userId } = useLocalSearchParams<{ userId: string }>();
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [detail, setDetail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // userId가 없으면 신고 대상을 특정할 수 없으므로 뒤로 이동
+  if (!userId) {
+    router.back();
+    return null;
+  }
+
+  const reportedUserId = Number(userId);
 
   async function handleSubmit() {
     if (!selectedReason) {
@@ -35,12 +44,10 @@ export default function ReportScreen() {
     }
     setSubmitting(true);
     try {
-      // reportedId는 실제 구현에서 라우트 파라미터로 받아야 함
-      // 현재는 placeholder로 0 사용
       const reason = detail.trim()
         ? `${selectedReason}: ${detail.trim()}`
         : selectedReason;
-      await createReport(0, reason);
+      await createReport(reportedUserId, reason);
       Alert.alert('신고 완료', '신고가 접수되었어요. 검토 후 처리될 예정이에요.', [
         { text: '확인', onPress: () => router.back() },
       ]);

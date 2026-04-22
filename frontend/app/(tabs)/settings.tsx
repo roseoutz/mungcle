@@ -93,7 +93,12 @@ export default function SettingsScreen() {
           />
           <MenuItem
             label="신고하기"
-            onPress={() => router.push('/settings/report')}
+            onPress={() =>
+              router.push({
+                pathname: '/settings/report',
+                params: { userId: String(user?.id ?? '') },
+              })
+            }
             accessibilityLabel="신고 화면으로 이동"
           />
         </View>

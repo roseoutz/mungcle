@@ -31,9 +31,9 @@ export async function unblock(userId: number): Promise<void> {
   return apiClient<void>(`/api/blocks/${userId}`, { method: 'DELETE' });
 }
 
-export async function createReport(reportedId: number, reason: string): Promise<void> {
+export async function createReport(reportedUserId: number, reason: string): Promise<void> {
   return apiClient<void>('/api/reports', {
     method: 'POST',
-    body: JSON.stringify({ reportedId, reason }),
+    body: JSON.stringify({ reportedUserId, reason }),
   });
 }
