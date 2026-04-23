@@ -32,36 +32,35 @@ export function useRetry<T>(
   const asyncFnRef = useRef(asyncFn);
   asyncFnRef.current = asyncFn;
 
-  const execute = useCallback(
-    async (attempt: number) => {
-      setIsLoading(true);
-      setError(null);
+  const execute = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setRetryCount(0);
+
+    // 재귀 대신 for 루프 사용 — finally가 각 호출마다 실행되던 isLoading 깜빡임 방지
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await asyncFnRef.current();
         setData(result);
-        setError(null);
+        setIsLoading(false);
+        return;
       } catch (err) {
-        const caughtError = err instanceof Error ? err : new Error(String(err));
         if (attempt < maxRetries) {
           // 지수 백오프: initialDelayMs * 2^attempt (최대 30초)
           const delay = Math.min(initialDelayMs * Math.pow(2, attempt), 30_000);
-          await sleep(delay);
           setRetryCount(attempt + 1);
-          await execute(attempt + 1);
-          return;
+          await sleep(delay);
+        } else {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setData(null);
+          setIsLoading(false);
         }
-        setError(caughtError);
-        setData(null);
-      } finally {
-        setIsLoading(false);
       }
-    },
-    [maxRetries, initialDelayMs],
-  );
+    }
+  }, [maxRetries, initialDelayMs]);
 
   const retry = useCallback(() => {
-    setRetryCount(0);
-    execute(0);
+    execute();
   }, [execute]);
 
   return { data, error, isLoading, retryCount, retry };
