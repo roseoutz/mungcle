@@ -26,6 +26,8 @@ class JwtAuthenticationFilter(
                 } else {
                     null
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // 인증 실패 — 인증 없이 계속
                 null

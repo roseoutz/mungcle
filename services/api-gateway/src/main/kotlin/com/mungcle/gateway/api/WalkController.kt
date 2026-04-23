@@ -35,7 +35,6 @@ class WalkController(
     @PostMapping("/start")
     suspend fun startWalk(@AuthUser userId: Long, @Valid @RequestBody req: StartWalkRequest): WalkResponse {
         val walkType = if (req.open) WalkType.WALK_TYPE_OPEN else WalkType.WALK_TYPE_SOLO
-        // lat/lng는 GridCell 변환에만 사용하고 내부 서비스로 전달하지 않는다
         return walksClient.startWalk(userId, req.dogId, walkType, req.lat, req.lng).toResponse()
     }
 
