@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "social") | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.social.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mungcle.selectorLabels" (dict "component" "social") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mungcle.selectorLabels" (dict "component" "social") | nindent 8 }}
+    spec:
+      containers:
+        - name: social
+          image: {{ include "mungcle.image" (dict "registry" .Values.global.image.registry "image" .Values.services.social.image "tag" .Values.services.social.tag) }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.services.social.port }}
+          envFrom:
+            - configMapRef:
+                name: mungcle-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mungcle-secret
+                  key: postgres-password
+            - name: TSID_NODE
+              value: {{ .Values.services.social.tsidNode | quote }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.services.social.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            grpc:
+              port: {{ .Values.services.social.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.services.social.resources | nindent 12 }}

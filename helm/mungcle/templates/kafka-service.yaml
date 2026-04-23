@@ -1,0 +1,22 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "kafka") | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None   # headless for StatefulSet DNS
+  selector:
+    {{- include "mungcle.selectorLabels" (dict "component" "kafka") | nindent 4 }}
+  ports:
+    - name: kafka
+      port: {{ .Values.kafka.port }}
+      targetPort: kafka
+    - name: controller
+      port: {{ .Values.kafka.controllerPort }}
+      targetPort: controller
+{{- end }}

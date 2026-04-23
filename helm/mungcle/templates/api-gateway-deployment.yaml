@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "api-gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.apiGateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mungcle.selectorLabels" (dict "component" "api-gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mungcle.selectorLabels" (dict "component" "api-gateway") | nindent 8 }}
+    spec:
+      containers:
+        - name: api-gateway
+          image: {{ include "mungcle.image" (dict "registry" .Values.global.image.registry "image" .Values.services.apiGateway.image "tag" .Values.services.apiGateway.tag) }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.apiGateway.port }}
+          envFrom:
+            - configMapRef:
+                name: mungcle-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mungcle-secret
+                  key: jwt-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.services.apiGateway.resources | nindent 12 }}
+{{- if .Values.services.apiGateway.hpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-gateway
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  minReplicas: {{ .Values.services.apiGateway.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.apiGateway.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.apiGateway.hpa.targetCPUUtilizationPercentage }}
+{{- end }}

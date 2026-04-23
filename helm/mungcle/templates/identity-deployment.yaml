@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "identity") | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.identity.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mungcle.selectorLabels" (dict "component" "identity") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mungcle.selectorLabels" (dict "component" "identity") | nindent 8 }}
+    spec:
+      containers:
+        - name: identity
+          image: {{ include "mungcle.image" (dict "registry" .Values.global.image.registry "image" .Values.services.identity.image "tag" .Values.services.identity.tag) }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.services.identity.port }}
+          envFrom:
+            - configMapRef:
+                name: mungcle-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mungcle-secret
+                  key: postgres-password
+            - name: TSID_NODE
+              value: {{ .Values.services.identity.tsidNode | quote }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.services.identity.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            grpc:
+              port: {{ .Values.services.identity.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.services.identity.resources | nindent 12 }}

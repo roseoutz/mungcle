@@ -1,0 +1,194 @@
+global:
+  namespace: mungcle
+  image:
+    registry: ""          # empty = local (minikube)
+    pullPolicy: IfNotPresent
+
+# ─── PostgreSQL ──────────────────────────────────────────────────────────────
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  port: 5432
+  database: mungcle
+  username: postgres
+  # password comes from secret.yaml (key: postgres-password)
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ─── Kafka ───────────────────────────────────────────────────────────────────
+kafka:
+  enabled: true
+  image: apache/kafka:3.9.0
+  port: 9092
+  controllerPort: 9093
+  clusterId: mungcle-kafka-cluster-001
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ─── Observability ───────────────────────────────────────────────────────────
+otelCollector:
+  enabled: true
+  image: otel/opentelemetry-collector-contrib:0.120.0
+  grpcPort: 4317
+  httpPort: 4318
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+tempo:
+  enabled: true
+  image: grafana/tempo:2.7.2
+  port: 3200
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+prometheus:
+  enabled: true
+  image: prom/prometheus:v3.2.1
+  port: 9090
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+grafana:
+  enabled: true
+  image: grafana/grafana:11.5.2
+  port: 3000
+  storage: 1Gi
+  adminPassword: admin
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# ─── Application Services ────────────────────────────────────────────────────
+services:
+  identity:
+    replicas: 1
+    image: mungcle/identity
+    tag: latest
+    port: 50051
+    tsidNode: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  petProfile:
+    replicas: 1
+    image: mungcle/pet-profile
+    tag: latest
+    port: 50052
+    tsidNode: 3
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  walks:
+    replicas: 1
+    image: mungcle/walks
+    tag: latest
+    port: 50053
+    tsidNode: 4
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  social:
+    replicas: 1
+    image: mungcle/social
+    tag: latest
+    port: 50054
+    tsidNode: 5
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  notification:
+    replicas: 1
+    image: mungcle/notification
+    tag: latest
+    port: 50055
+    tsidNode: 6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  apiGateway:
+    replicas: 1
+    image: mungcle/api-gateway
+    tag: latest
+    port: 4000
+    hpa:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+# ─── Ingress ─────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: mungcle.local
+  annotations: {}
+
+# ─── Secrets (override in production — do not commit real values) ─────────────
+secrets:
+  postgresPassword: postgres
+  jwtSecret: mungcle-dev-secret-key-change-in-production
