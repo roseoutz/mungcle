@@ -6,12 +6,16 @@ import com.mungcle.gateway.dto.CreateDogRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
 import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
+import com.mungcle.gateway.infrastructure.resilience.FallbackResult
+import com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException
 import com.mungcle.gateway.infrastructure.security.AuthUserArgumentResolver
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import com.mungcle.proto.identity.v1.validateTokenResponse
 import com.mungcle.proto.petprofile.v1.DogSize
 import com.mungcle.proto.petprofile.v1.dogInfo
 import com.ninjasquad.springmockk.MockkBean
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.mockk.coEvery
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,6 +44,11 @@ class DogControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        // executeWithFallback 기본 동작: 실제 block 실행 후 FallbackResult(value, isFallback=false) 반환
+        coEvery { cb.executeWithFallback(any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            val result = thirdArg<suspend () -> Any?>()()
+            FallbackResult(result, isFallback = false)
+        }
     }
 
     private val fakeDog = dogInfo {
@@ -96,5 +105,40 @@ class DogControllerTest {
         webTestClient.get().uri("/v1/dogs")
             .exchange()
             .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `목록 조회 — CB OPEN 시 빈 배열 + X-Fallback 헤더 반환`() {
+        setupAuth()
+        // CB OPEN 상태 시뮬레이션: executeWithFallback이 fallback 값 반환
+        coEvery { cb.executeWithFallback(any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            FallbackResult(secondArg<Any?>(), isFallback = true)
+        }
+
+        webTestClient.get().uri("/v1/dogs")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueEquals("X-Fallback", "true")
+            .expectBody()
+            .jsonPath("$").isArray
+            .jsonPath("$.length()").isEqualTo(0)
+    }
+
+    @Test
+    fun `단건 조회 — CB OPEN 시 503 반환`() {
+        setupAuth()
+        // 단건 조회는 execute() 사용 — CB OPEN 시 ServiceUnavailableException → 503
+        val fakeCb = CircuitBreakerRegistry.ofDefaults().circuitBreaker("test")
+        fakeCb.transitionToOpenState()
+        coEvery { cb.execute(any(), any<suspend () -> Any?>()) } throws ServiceUnavailableException(
+            "pet-profile-service",
+            CallNotPermittedException.createCallNotPermittedException(fakeCb),
+        )
+
+        webTestClient.get().uri("/v1/dogs/1")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isEqualTo(503)
     }
 }

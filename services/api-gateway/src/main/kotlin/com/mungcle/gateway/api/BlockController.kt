@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/blocks")
@@ -36,12 +37,20 @@ class BlockController(
     }
 
     @GetMapping
-    suspend fun listBlocks(@AuthUser userId: Long): List<BlockResponse> =
-        cb.execute("identity-service") { identityClient.listBlocks(userId) }.blocksList.map { block ->
-            BlockResponse(
-                blockedUserId = block.blockedUserId,
-                blockedNickname = block.blockedNickname,
-                createdAt = block.createdAt,
-            )
+    suspend fun listBlocks(@AuthUser userId: Long, exchange: ServerWebExchange): List<BlockResponse> {
+        // listBlocks 응답은 proto 래퍼이므로 매핑까지 block 안에서 수행
+        val emptyFallback = emptyList<BlockResponse>()
+        val (blocks, isFallback) = cb.executeWithFallback("identity-service", emptyFallback) {
+            identityClient.listBlocks(userId).blocksList.map { block ->
+                BlockResponse(
+                    blockedUserId = block.blockedUserId,
+                    blockedNickname = block.blockedNickname,
+                    createdAt = block.createdAt,
+                )
+            }
         }
+        // CB OPEN 시 클라이언트에게 fallback 응답임을 알린다
+        if (isFallback) exchange.response.headers.add("X-Fallback", "true")
+        return blocks
+    }
 }

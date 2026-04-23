@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/walk-patterns")
@@ -25,11 +26,20 @@ class WalkPatternController(
         @AuthUser userId: Long,
         @RequestParam lat: Double,
         @RequestParam lng: Double,
+        exchange: ServerWebExchange,
     ): NearbyPatternsResponse {
         val gridCell = GridCell.fromCoordinates(lat, lng).value
-        val blockedUserIds = cb.execute("identity-service") { identityClient.getBlockedUserIds(userId) }
-        val patterns = cb.execute("walks-service") { walksClient.getNearbyPatterns(gridCell, userId, blockedUserIds) }
-        return NearbyPatternsResponse(patterns.map { pattern ->
+        val blockedResult = cb.executeWithFallback("identity-service", emptyList<Long>()) {
+            identityClient.getBlockedUserIds(userId)
+        }
+        val patternsResult = cb.executeWithFallback("walks-service", emptyList()) {
+            walksClient.getNearbyPatterns(gridCell, userId, blockedResult.value)
+        }
+        // 어느 한 서비스라도 fallback이면 X-Fallback 헤더 설정
+        if (blockedResult.isFallback || patternsResult.isFallback) {
+            exchange.response.headers.add("X-Fallback", "true")
+        }
+        return NearbyPatternsResponse(patternsResult.value.map { pattern ->
             PatternResponse(
                 dogId = pattern.dogId,
                 typicalHour = pattern.typicalHour,
