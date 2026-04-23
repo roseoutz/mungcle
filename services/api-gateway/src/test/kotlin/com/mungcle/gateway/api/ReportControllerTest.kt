@@ -48,7 +48,7 @@ class ReportControllerTest {
         val req = CreateReportRequest(reportedUserId = 99L, reason = "욕설/혐오 발언")
 
         mockMvc.perform(
-            post("/api/reports")
+            post("/v1/reports")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -62,7 +62,7 @@ class ReportControllerTest {
         val body = """{"reportedUserId": 99, "reason": ""}"""
 
         mockMvc.perform(
-            post("/api/reports")
+            post("/v1/reports")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -76,7 +76,7 @@ class ReportControllerTest {
         val body = """{"reason": "스팸/광고"}"""
 
         mockMvc.perform(
-            post("/api/reports")
+            post("/v1/reports")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
@@ -87,7 +87,7 @@ class ReportControllerTest {
     @Test
     fun `비인증 신고 요청 — 401 반환`() {
         mockMvc.perform(
-            post("/api/reports")
+            post("/v1/reports")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"reportedUserId": 99, "reason": "스팸/광고"}""")
         )
