@@ -53,7 +53,7 @@ class BlockControllerTest {
         val req = CreateBlockRequest(blockedUserId = 99L)
 
         mockMvc.perform(
-            post("/api/blocks")
+            post("/v1/blocks")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -74,7 +74,7 @@ class BlockControllerTest {
         coEvery { identityClient.listBlocks(1L) } returns response
 
         mockMvc.perform(
-            get("/api/blocks")
+            get("/v1/blocks")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -88,7 +88,7 @@ class BlockControllerTest {
         coJustRun { identityClient.deleteBlock(any(), any()) }
 
         mockMvc.perform(
-            delete("/api/blocks/99")
+            delete("/v1/blocks/99")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isNoContent)
@@ -96,7 +96,7 @@ class BlockControllerTest {
 
     @Test
     fun `비인증 차단 목록 조회 — 401 반환`() {
-        mockMvc.perform(get("/api/blocks"))
+        mockMvc.perform(get("/v1/blocks"))
             .andExpect(status().isUnauthorized)
     }
 }

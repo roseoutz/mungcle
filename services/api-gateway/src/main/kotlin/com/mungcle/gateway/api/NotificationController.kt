@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.http.HttpStatus
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/v1/notifications")
 class NotificationController(
     private val notificationClient: NotificationClient,
 ) {

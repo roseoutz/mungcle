@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/dogs")
+@RequestMapping("/v1/dogs")
 class DogController(private val petProfileClient: PetProfileClient) {
 
     @PostMapping
