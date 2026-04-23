@@ -1,0 +1,15 @@
+apiVersion: 1
+
+providers:
+  # 멍클 대시보드 프로바이더 — /etc/grafana/provisioning/dashboards/ 디렉토리에서 JSON 로드
+  - name: mungcle
+    orgId: 1
+    folder: Mungcle
+    folderUid: mungcle
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
