@@ -12,6 +12,13 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.TimeUnit
 
 /**
+ * Fallback 결과 래퍼.
+ * [value]는 실제 호출 결과 또는 CB OPEN 시 반환된 fallback 값.
+ * [isFallback]이 true이면 클라이언트에게 X-Fallback: true 헤더를 설정해야 한다.
+ */
+data class FallbackResult<T>(val value: T, val isFallback: Boolean)
+
+/**
  * gRPC 호출을 Resilience4j Circuit Breaker로 감싸는 유틸리티.
  * Circuit Breaker 상태 전이(CLOSED→OPEN 등)를 로깅하고,
  * 오픈 상태에서 호출 시 ServiceUnavailableException을 발생시킨다.
@@ -57,6 +64,40 @@ class CircuitBreakerWrapper(
         } catch (e: Exception) {
             val duration = System.nanoTime() - start
             // 인프라 장애만 CB 실패로 기록 — 비즈니스 에러는 기록하지 않음
+            if (shouldRecord(e)) {
+                cb.onError(duration, TimeUnit.NANOSECONDS, e)
+            } else {
+                cb.onSuccess(duration, TimeUnit.NANOSECONDS)
+            }
+            throw e
+        }
+    }
+
+    /**
+     * CB가 OPEN 상태일 때 fallback 값을 반환하는 execute 변형.
+     * 목록 API에서 사용하여 CB OPEN 시 빈 컬렉션을 반환하고 클라이언트에 알린다.
+     *
+     * @param serviceName resilience4j.circuitbreaker.instances 에 등록된 이름
+     * @param fallback CB OPEN 상태일 때 반환할 기본값
+     * @param block 보호할 suspend 함수
+     * @return [FallbackResult] — value는 실제 결과 또는 fallback, isFallback은 fallback 사용 여부
+     */
+    suspend fun <T> executeWithFallback(serviceName: String, fallback: T, block: suspend () -> T): FallbackResult<T> {
+        val cb = circuitBreakerRegistry.circuitBreaker(serviceName)
+        registerIfNeeded(cb)
+
+        if (!cb.tryAcquirePermission()) {
+            log.warn("[CircuitBreaker] {} is OPEN — fallback 반환", serviceName)
+            return FallbackResult(fallback, isFallback = true)
+        }
+
+        val start = System.nanoTime()
+        return try {
+            val result = block()
+            cb.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+            FallbackResult(result, isFallback = false)
+        } catch (e: Exception) {
+            val duration = System.nanoTime() - start
             if (shouldRecord(e)) {
                 cb.onError(duration, TimeUnit.NANOSECONDS, e)
             } else {

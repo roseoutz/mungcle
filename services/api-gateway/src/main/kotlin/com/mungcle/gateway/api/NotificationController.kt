@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.http.HttpStatus
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/notifications")
@@ -29,23 +30,30 @@ class NotificationController(
         @AuthUser userId: Long,
         @RequestParam(required = false) cursor: Long?,
         @RequestParam(defaultValue = "20") limit: Int,
+        exchange: ServerWebExchange,
     ): NotificationsResponse {
-        val response = cb.execute("notification-service") { notificationClient.listNotifications(userId, cursor, limit) }
-        return NotificationsResponse(
-            notifications = response.notificationsList.map { notification ->
-                @Suppress("UNCHECKED_CAST")
-                val payload = objectMapper.readValue(notification.payloadJson, Map::class.java) as Map<String, Any>
-                NotificationResponse(
-                    id = notification.id,
-                    userId = notification.userId,
-                    type = notification.type.name.removePrefix("NOTIFICATION_TYPE_"),
-                    payload = payload,
-                    read = notification.read,
-                    createdAt = notification.createdAt,
-                )
-            },
-            nextCursor = if (response.hasNextCursor()) response.nextCursor else null,
-        )
+        val emptyFallback = NotificationsResponse(notifications = emptyList(), nextCursor = null)
+        val (mapped, isFallback) = cb.executeWithFallback("notification-service", emptyFallback) {
+            val response = notificationClient.listNotifications(userId, cursor, limit)
+            NotificationsResponse(
+                notifications = response.notificationsList.map { notification ->
+                    @Suppress("UNCHECKED_CAST")
+                    val payload = objectMapper.readValue(notification.payloadJson, Map::class.java) as Map<String, Any>
+                    NotificationResponse(
+                        id = notification.id,
+                        userId = notification.userId,
+                        type = notification.type.name.removePrefix("NOTIFICATION_TYPE_"),
+                        payload = payload,
+                        read = notification.read,
+                        createdAt = notification.createdAt,
+                    )
+                },
+                nextCursor = if (response.hasNextCursor()) response.nextCursor else null,
+            )
+        }
+        // CB OPEN 시 클라이언트에게 fallback 응답임을 알린다
+        if (isFallback) exchange.response.headers.add("X-Fallback", "true")
+        return mapped
     }
 
     @PostMapping("/{id}/read")

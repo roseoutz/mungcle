@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/dogs")
@@ -44,8 +45,14 @@ class DogController(
         }.toResponse()
 
     @GetMapping
-    suspend fun getDogs(@AuthUser userId: Long): List<DogResponse> =
-        cb.execute("pet-profile-service") { petProfileClient.getDogsByOwner(userId) }.map { it.toResponse() }
+    suspend fun getDogs(@AuthUser userId: Long, exchange: ServerWebExchange): List<DogResponse> {
+        val (dogs, isFallback) = cb.executeWithFallback("pet-profile-service", emptyList()) {
+            petProfileClient.getDogsByOwner(userId)
+        }
+        // CB OPEN 시 클라이언트에게 fallback 응답임을 알린다
+        if (isFallback) exchange.response.headers.add("X-Fallback", "true")
+        return dogs.map { it.toResponse() }
+    }
 
     @GetMapping("/{id}")
     suspend fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse =

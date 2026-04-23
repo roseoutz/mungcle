@@ -7,7 +7,9 @@ import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -85,5 +87,28 @@ class CircuitBreakerWrapperTest {
         }
 
         assertEquals(CircuitBreaker.State.CLOSED, cb.state)
+    }
+
+    @Test
+    fun `executeWithFallback — CB CLOSED 시 실제 block 결과와 isFallback=false 반환`() = runTest {
+        val result = wrapper.executeWithFallback("fallback-closed-service", emptyList<String>()) {
+            listOf("a", "b")
+        }
+
+        assertEquals(listOf("a", "b"), result.value)
+        assertFalse(result.isFallback)
+    }
+
+    @Test
+    fun `executeWithFallback — CB OPEN 시 fallback 값과 isFallback=true 반환`() = runTest {
+        val cb = registry.circuitBreaker("fallback-open-service")
+        cb.transitionToOpenState()
+
+        val result = wrapper.executeWithFallback("fallback-open-service", emptyList<String>()) {
+            listOf("should not reach")
+        }
+
+        assertEquals(emptyList<String>(), result.value)
+        assertTrue(result.isFallback)
     }
 }

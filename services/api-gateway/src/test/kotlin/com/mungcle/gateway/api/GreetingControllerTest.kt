@@ -7,6 +7,7 @@ import com.mungcle.gateway.dto.RespondGreetingRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.SocialClient
 import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
+import com.mungcle.gateway.infrastructure.resilience.FallbackResult
 import com.mungcle.gateway.infrastructure.security.AuthUserArgumentResolver
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import com.mungcle.proto.identity.v1.validateTokenResponse
@@ -41,6 +42,9 @@ class GreetingControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        coEvery { cb.executeWithFallback(any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            FallbackResult(thirdArg<suspend () -> Any?>()(), isFallback = false)
+        }
     }
 
     private val fakeGreeting = greetingInfo {

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/greetings")
@@ -67,11 +68,16 @@ class GreetingController(
         @AuthUser userId: Long,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) direction: String?,
+        exchange: ServerWebExchange,
     ): List<GreetingResponse> {
         val statusFilter = status?.let { parseGreetingStatus(it) }
         val directionFilter = direction?.let { parseGreetingDirection(it) }
-        return cb.execute("social-service") { socialClient.listGreetings(userId, statusFilter, directionFilter) }
-            .map { it.toResponse() }
+        val (greetings, isFallback) = cb.executeWithFallback("social-service", emptyList()) {
+            socialClient.listGreetings(userId, statusFilter, directionFilter)
+        }
+        // CB OPEN 시 클라이언트에게 fallback 응답임을 알린다
+        if (isFallback) exchange.response.headers.add("X-Fallback", "true")
+        return greetings.map { it.toResponse() }
     }
 
     @PostMapping("/{id}/messages")
@@ -90,9 +96,18 @@ class GreetingController(
         }.toMessageResponse()
 
     @GetMapping("/{id}/messages")
-    suspend fun listMessages(@AuthUser userId: Long, @PathVariable id: Long): List<MessageResponse> =
-        cb.execute("social-service") { socialClient.listMessages(greetingId = id, userId = userId) }
-            .map { it.toMessageResponse() }
+    suspend fun listMessages(
+        @AuthUser userId: Long,
+        @PathVariable id: Long,
+        exchange: ServerWebExchange,
+    ): List<MessageResponse> {
+        val (messages, isFallback) = cb.executeWithFallback("social-service", emptyList()) {
+            socialClient.listMessages(greetingId = id, userId = userId)
+        }
+        // CB OPEN 시 클라이언트에게 fallback 응답임을 알린다
+        if (isFallback) exchange.response.headers.add("X-Fallback", "true")
+        return messages.map { it.toMessageResponse() }
+    }
 
     private fun parseGreetingStatus(value: String): GreetingStatus = when (value.uppercase()) {
         "PENDING" -> GreetingStatus.GREETING_STATUS_PENDING
