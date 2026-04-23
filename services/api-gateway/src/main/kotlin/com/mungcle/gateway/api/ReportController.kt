@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/v1/reports")
 class ReportController(private val identityClient: IdentityClient) {
 
     @PostMapping

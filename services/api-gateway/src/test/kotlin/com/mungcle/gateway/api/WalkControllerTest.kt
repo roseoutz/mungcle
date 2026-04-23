@@ -93,7 +93,7 @@ class WalkControllerTest {
         coEvery { walksClient.startWalk(any(), any(), any(), any(), any()) } returns fakeWalkInfo
 
         mockMvc.perform(
-            post("/api/walks/start")
+            post("/v1/walks/start")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -119,7 +119,7 @@ class WalkControllerTest {
         coEvery { walksClient.stopWalk(100L, 10L) } returns endedWalk
 
         mockMvc.perform(
-            post("/api/walks/100/stop")
+            post("/v1/walks/100/stop")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -143,7 +143,7 @@ class WalkControllerTest {
         coEvery { identityClient.getUsersByIds(listOf(10L)) } returns listOf(fakeUser)
 
         mockMvc.perform(
-            get("/api/walks/nearby")
+            get("/v1/walks/nearby")
                 .header("Authorization", "Bearer valid-token")
                 .param("lat", "37.5")
                 .param("lng", "127.0")
@@ -160,7 +160,7 @@ class WalkControllerTest {
         coEvery { walksClient.getMyActiveWalks(10L) } returns listOf(fakeWalkInfo)
 
         mockMvc.perform(
-            get("/api/walks/me/active")
+            get("/v1/walks/me/active")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -169,7 +169,7 @@ class WalkControllerTest {
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/api/walks/me/active"))
+        mockMvc.perform(get("/v1/walks/me/active"))
             .andExpect(status().isUnauthorized)
     }
 }

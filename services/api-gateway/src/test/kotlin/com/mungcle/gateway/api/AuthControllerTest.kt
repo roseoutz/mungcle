@@ -53,7 +53,7 @@ class AuthControllerTest {
         coEvery { identityClient.registerEmail(any(), any(), any()) } returns fakeAuthResponse
 
         mockMvc.perform(
-            post("/api/auth/email/register")
+            post("/v1/auth/email/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -68,7 +68,7 @@ class AuthControllerTest {
         coEvery { identityClient.loginEmail(any(), any()) } returns fakeAuthResponse
 
         mockMvc.perform(
-            post("/api/auth/email/login")
+            post("/v1/auth/email/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -81,7 +81,7 @@ class AuthControllerTest {
         val req = mapOf("email" to "not-an-email", "password" to "password123", "nickname" to "testuser")
 
         mockMvc.perform(
-            post("/api/auth/email/register")
+            post("/v1/auth/email/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -93,7 +93,7 @@ class AuthControllerTest {
         val req = mapOf("email" to "test@example.com", "password" to "short", "nickname" to "testuser")
 
         mockMvc.perform(
-            post("/api/auth/email/register")
+            post("/v1/auth/email/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -106,7 +106,7 @@ class AuthControllerTest {
         coEvery { identityClient.authenticateSocial("KAKAO", "kakao-token-xyz") } returns fakeAuthResponse
 
         mockMvc.perform(
-            post("/api/auth/social")
+            post("/v1/auth/social")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -120,7 +120,7 @@ class AuthControllerTest {
         val req = mapOf("accessToken" to "some-token")
 
         mockMvc.perform(
-            post("/api/auth/social")
+            post("/v1/auth/social")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -132,7 +132,7 @@ class AuthControllerTest {
         val req = mapOf("provider" to "KAKAO")
 
         mockMvc.perform(
-            post("/api/auth/social")
+            post("/v1/auth/social")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )
@@ -145,7 +145,7 @@ class AuthControllerTest {
         coEvery { identityClient.authenticateSocial("KAKAO", "kakao-token-xyz") } returns fakeAuthResponse
 
         mockMvc.perform(
-            post("/api/auth/kakao")
+            post("/v1/auth/kakao")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
         )

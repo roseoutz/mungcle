@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/greetings")
+@RequestMapping("/v1/greetings")
 class GreetingController(
     private val socialClient: SocialClient,
 ) {

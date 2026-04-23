@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/walk-patterns")
+@RequestMapping("/v1/walk-patterns")
 class WalkPatternController(
     private val walksClient: WalksClient,
     private val identityClient: IdentityClient,

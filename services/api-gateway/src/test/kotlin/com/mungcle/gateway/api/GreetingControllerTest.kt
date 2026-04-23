@@ -66,7 +66,7 @@ class GreetingControllerTest {
         coEvery { socialClient.createGreeting(10L, 1L, 100L) } returns fakeGreeting
 
         mockMvc.perform(
-            post("/api/greetings")
+            post("/v1/greetings")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -94,7 +94,7 @@ class GreetingControllerTest {
         coEvery { socialClient.respondGreeting(200L, 10L, true) } returns acceptedGreeting
 
         mockMvc.perform(
-            post("/api/greetings/200/respond")
+            post("/v1/greetings/200/respond")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -109,7 +109,7 @@ class GreetingControllerTest {
         coEvery { socialClient.listGreetings(10L, null, null) } returns listOf(fakeGreeting)
 
         mockMvc.perform(
-            get("/api/greetings")
+            get("/v1/greetings")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -118,7 +118,7 @@ class GreetingControllerTest {
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/api/greetings"))
+        mockMvc.perform(get("/v1/greetings"))
             .andExpect(status().isUnauthorized)
     }
 }
