@@ -1,7 +1,5 @@
 package com.mungcle.gateway.api
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.mungcle.gateway.config.SecurityConfig
 import com.mungcle.gateway.config.WebConfig
 import com.mungcle.gateway.dto.CreateDogRequest
@@ -16,29 +14,23 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(DogController::class)
+@WebFluxTest(DogController::class)
 @Import(SecurityConfig::class, WebConfig::class, JwtAuthenticationFilter::class, AuthUserArgumentResolver::class)
 class DogControllerTest {
 
     @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var webTestClient: WebTestClient
 
     @MockkBean
     private lateinit var petProfileClient: PetProfileClient
 
     @MockkBean
     private lateinit var identityClient: IdentityClient
-
-    private val objectMapper = ObjectMapper().registerKotlinModule()
 
     private val fakeDog = dogInfo {
         id = 1L
@@ -66,14 +58,14 @@ class DogControllerTest {
         val req = CreateDogRequest(name = "초코", breed = "골든리트리버", size = "LARGE", sociability = 4)
         coEvery { petProfileClient.createDog(any(), any(), any(), any(), any(), any(), null, null) } returns fakeDog
 
-        mockMvc.perform(
-            post("/v1/dogs")
-                .header("Authorization", "Bearer valid-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req))
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.name").value("초코"))
+        webTestClient.post().uri("/v1/dogs")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(req)
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody()
+            .jsonPath("$.name").isEqualTo("초코")
     }
 
     @Test
@@ -81,19 +73,18 @@ class DogControllerTest {
         setupAuth()
         coEvery { petProfileClient.getDogsByOwner(10L) } returns listOf(fakeDog)
 
-        mockMvc.perform(
-            get("/v1/dogs")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].name").value("초코"))
+        webTestClient.get().uri("/v1/dogs")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$[0].name").isEqualTo("초코")
     }
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(
-            get("/v1/dogs")
-        )
-            .andExpect(status().isUnauthorized)
+        webTestClient.get().uri("/v1/dogs")
+            .exchange()
+            .expectStatus().isUnauthorized
     }
 }

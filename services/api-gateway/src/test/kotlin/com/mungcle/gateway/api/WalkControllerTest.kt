@@ -1,7 +1,5 @@
 package com.mungcle.gateway.api
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.mungcle.gateway.config.SecurityConfig
 import com.mungcle.gateway.config.WebConfig
 import com.mungcle.gateway.dto.StartWalkRequest
@@ -22,21 +20,17 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(WalkController::class)
+@WebFluxTest(WalkController::class)
 @Import(SecurityConfig::class, WebConfig::class, JwtAuthenticationFilter::class, AuthUserArgumentResolver::class)
 class WalkControllerTest {
 
     @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var webTestClient: WebTestClient
 
     @MockkBean
     private lateinit var walksClient: WalksClient
@@ -46,8 +40,6 @@ class WalkControllerTest {
 
     @MockkBean
     private lateinit var petProfileClient: PetProfileClient
-
-    private val objectMapper = ObjectMapper().registerKotlinModule()
 
     private val fakeWalkInfo = walkInfo {
         id = 100L
@@ -92,15 +84,15 @@ class WalkControllerTest {
         val req = StartWalkRequest(dogId = 1L, lat = 37.5, lng = 127.0, open = true)
         coEvery { walksClient.startWalk(any(), any(), any(), any(), any()) } returns fakeWalkInfo
 
-        mockMvc.perform(
-            post("/v1/walks/start")
-                .header("Authorization", "Bearer valid-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req))
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(100L))
-            .andExpect(jsonPath("$.status").value("ACTIVE"))
+        webTestClient.post().uri("/v1/walks/start")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(req)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.id").isEqualTo(100L)
+            .jsonPath("$.status").isEqualTo("ACTIVE")
     }
 
     @Test
@@ -118,12 +110,12 @@ class WalkControllerTest {
         }
         coEvery { walksClient.stopWalk(100L, 10L) } returns endedWalk
 
-        mockMvc.perform(
-            post("/v1/walks/100/stop")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.status").value("ENDED"))
+        webTestClient.post().uri("/v1/walks/100/stop")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.status").isEqualTo("ENDED")
     }
 
     @Test
@@ -142,16 +134,14 @@ class WalkControllerTest {
         coEvery { petProfileClient.getDogsByIds(listOf(1L)) } returns listOf(fakeDog)
         coEvery { identityClient.getUsersByIds(listOf(10L)) } returns listOf(fakeUser)
 
-        mockMvc.perform(
-            get("/v1/walks/nearby")
-                .header("Authorization", "Bearer valid-token")
-                .param("lat", "37.5")
-                .param("lng", "127.0")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.walks[0].walkId").value(100L))
-            .andExpect(jsonPath("$.walks[0].dog.name").value("초코"))
-            .andExpect(jsonPath("$.walks[0].owner.nickname").value("홍길동"))
+        webTestClient.get().uri("/v1/walks/nearby?lat=37.5&lng=127.0")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.walks[0].walkId").isEqualTo(100L)
+            .jsonPath("$.walks[0].dog.name").isEqualTo("초코")
+            .jsonPath("$.walks[0].owner.nickname").isEqualTo("홍길동")
     }
 
     @Test
@@ -159,17 +149,18 @@ class WalkControllerTest {
         setupAuth()
         coEvery { walksClient.getMyActiveWalks(10L) } returns listOf(fakeWalkInfo)
 
-        mockMvc.perform(
-            get("/v1/walks/me/active")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].id").value(100L))
+        webTestClient.get().uri("/v1/walks/me/active")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$[0].id").isEqualTo(100L)
     }
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/v1/walks/me/active"))
-            .andExpect(status().isUnauthorized)
+        webTestClient.get().uri("/v1/walks/me/active")
+            .exchange()
+            .expectStatus().isUnauthorized
     }
 }

@@ -14,20 +14,16 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(NotificationController::class)
+@WebFluxTest(NotificationController::class)
 @Import(SecurityConfig::class, WebConfig::class, JwtAuthenticationFilter::class, AuthUserArgumentResolver::class)
 class NotificationControllerTest {
 
     @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var webTestClient: WebTestClient
 
     @MockkBean
     private lateinit var notificationClient: NotificationClient
@@ -58,14 +54,14 @@ class NotificationControllerTest {
             notifications += fakeNotification
         }
 
-        mockMvc.perform(
-            get("/v1/notifications")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.notifications[0].id").value(300L))
-            .andExpect(jsonPath("$.notifications[0].type").value("GREETING_RECEIVED"))
-            .andExpect(jsonPath("$.notifications[0].read").value(false))
+        webTestClient.get().uri("/v1/notifications")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.notifications[0].id").isEqualTo(300L)
+            .jsonPath("$.notifications[0].type").isEqualTo("GREETING_RECEIVED")
+            .jsonPath("$.notifications[0].read").isEqualTo(false)
     }
 
     @Test
@@ -73,16 +69,16 @@ class NotificationControllerTest {
         setupAuth()
         coEvery { notificationClient.markRead(300L, 10L) } returns Unit
 
-        mockMvc.perform(
-            post("/v1/notifications/300/read")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isNoContent)
+        webTestClient.post().uri("/v1/notifications/300/read")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isNoContent
     }
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/v1/notifications"))
-            .andExpect(status().isUnauthorized)
+        webTestClient.get().uri("/v1/notifications")
+            .exchange()
+            .expectStatus().isUnauthorized
     }
 }

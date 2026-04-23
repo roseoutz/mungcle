@@ -1,7 +1,5 @@
 package com.mungcle.gateway.api
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.mungcle.gateway.config.SecurityConfig
 import com.mungcle.gateway.config.WebConfig
 import com.mungcle.gateway.dto.CreateGreetingRequest
@@ -17,29 +15,23 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(GreetingController::class)
+@WebFluxTest(GreetingController::class)
 @Import(SecurityConfig::class, WebConfig::class, JwtAuthenticationFilter::class, AuthUserArgumentResolver::class)
 class GreetingControllerTest {
 
     @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var webTestClient: WebTestClient
 
     @MockkBean
     private lateinit var socialClient: SocialClient
 
     @MockkBean
     private lateinit var identityClient: IdentityClient
-
-    private val objectMapper = ObjectMapper().registerKotlinModule()
 
     private val fakeGreeting = greetingInfo {
         id = 200L
@@ -65,15 +57,15 @@ class GreetingControllerTest {
         val req = CreateGreetingRequest(senderDogId = 1L, receiverWalkId = 100L)
         coEvery { socialClient.createGreeting(10L, 1L, 100L) } returns fakeGreeting
 
-        mockMvc.perform(
-            post("/v1/greetings")
-                .header("Authorization", "Bearer valid-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req))
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").value(200L))
-            .andExpect(jsonPath("$.status").value("PENDING"))
+        webTestClient.post().uri("/v1/greetings")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(req)
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody()
+            .jsonPath("$.id").isEqualTo(200L)
+            .jsonPath("$.status").isEqualTo("PENDING")
     }
 
     @Test
@@ -93,14 +85,14 @@ class GreetingControllerTest {
         val req = RespondGreetingRequest(accept = true)
         coEvery { socialClient.respondGreeting(200L, 10L, true) } returns acceptedGreeting
 
-        mockMvc.perform(
-            post("/v1/greetings/200/respond")
-                .header("Authorization", "Bearer valid-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req))
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.status").value("ACCEPTED"))
+        webTestClient.post().uri("/v1/greetings/200/respond")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(req)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.status").isEqualTo("ACCEPTED")
     }
 
     @Test
@@ -108,17 +100,18 @@ class GreetingControllerTest {
         setupAuth()
         coEvery { socialClient.listGreetings(10L, null, null) } returns listOf(fakeGreeting)
 
-        mockMvc.perform(
-            get("/v1/greetings")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].id").value(200L))
+        webTestClient.get().uri("/v1/greetings")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$[0].id").isEqualTo(200L)
     }
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/v1/greetings"))
-            .andExpect(status().isUnauthorized)
+        webTestClient.get().uri("/v1/greetings")
+            .exchange()
+            .expectStatus().isUnauthorized
     }
 }

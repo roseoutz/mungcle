@@ -3,9 +3,9 @@ package com.mungcle.gateway.infrastructure.exception
 import com.mungcle.gateway.infrastructure.grpc.GrpcStatusConverter
 import io.grpc.StatusException
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.bind.support.WebExchangeBindException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -19,8 +19,8 @@ class GlobalExceptionHandler {
         )
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleValidation(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(WebExchangeBindException::class)
+    fun handleValidation(e: WebExchangeBindException): ResponseEntity<ErrorResponse> {
         val fieldErrors = e.bindingResult.fieldErrors
             .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
         return ResponseEntity.badRequest().body(

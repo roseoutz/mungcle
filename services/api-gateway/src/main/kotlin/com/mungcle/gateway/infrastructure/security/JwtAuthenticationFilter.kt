@@ -1,43 +1,47 @@
 package com.mungcle.gateway.infrastructure.security
 
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
-import com.mungcle.proto.identity.v1.ValidateTokenResponse
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.reactor.mono
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.stereotype.Component
-import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
+import reactor.core.publisher.Mono
 
 @Component
 class JwtAuthenticationFilter(
     private val identityClient: IdentityClient,
-) : OncePerRequestFilter() {
+) : WebFilter {
 
-    override fun doFilterInternal(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        filterChain: FilterChain,
-    ) {
-        val token = extractToken(request)
-        if (token != null) {
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+        val token = extractToken(exchange) ?: return chain.filter(exchange)
+
+        return mono {
             try {
-                val validateResponse: ValidateTokenResponse = runBlocking { identityClient.validateToken(token) }
+                val validateResponse = identityClient.validateToken(token)
                 if (validateResponse.valid) {
-                    val auth = UsernamePasswordAuthenticationToken(validateResponse.userId, null, emptyList())
-                    SecurityContextHolder.getContext().authentication = auth
+                    UsernamePasswordAuthenticationToken(validateResponse.userId, null, emptyList())
+                } else {
+                    null
                 }
             } catch (e: Exception) {
-                // 인증 실패 — SecurityContext 비우고 계속
+                // 인증 실패 — 인증 없이 계속
+                null
+            }
+        }.flatMap { auth ->
+            if (auth != null) {
+                chain.filter(exchange)
+                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))
+            } else {
+                chain.filter(exchange)
             }
         }
-        filterChain.doFilter(request, response)
     }
 
-    private fun extractToken(request: HttpServletRequest): String? {
-        val header = request.getHeader("Authorization") ?: return null
+    private fun extractToken(exchange: ServerWebExchange): String? {
+        val header = exchange.request.headers.getFirst("Authorization") ?: return null
         return if (header.startsWith("Bearer ")) header.substring(7) else null
     }
 }

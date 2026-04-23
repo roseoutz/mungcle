@@ -11,7 +11,7 @@ dependencies {
     implementation(project(":common:grpc-client"))
 
     // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -40,6 +40,8 @@ dependencies {
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("io.projectreactor:reactor-test")
     testImplementation("io.mockk:mockk:${property("mockkVersion")}")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
 }

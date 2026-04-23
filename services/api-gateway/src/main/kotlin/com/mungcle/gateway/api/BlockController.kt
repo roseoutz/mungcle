@@ -5,7 +5,6 @@ import com.mungcle.gateway.dto.CreateBlockRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import jakarta.validation.Valid
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,18 +21,18 @@ class BlockController(private val identityClient: IdentityClient) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun createBlock(@AuthUser userId: Long, @Valid @RequestBody req: CreateBlockRequest): Unit = runBlocking {
+    suspend fun createBlock(@AuthUser userId: Long, @Valid @RequestBody req: CreateBlockRequest) {
         identityClient.createBlock(blockerId = userId, blockedId = req.blockedUserId)
     }
 
     @DeleteMapping("/{blockedUserId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteBlock(@AuthUser userId: Long, @PathVariable blockedUserId: Long): Unit = runBlocking {
+    suspend fun deleteBlock(@AuthUser userId: Long, @PathVariable blockedUserId: Long) {
         identityClient.deleteBlock(blockerId = userId, blockedId = blockedUserId)
     }
 
     @GetMapping
-    fun listBlocks(@AuthUser userId: Long): List<BlockResponse> = runBlocking {
+    suspend fun listBlocks(@AuthUser userId: Long): List<BlockResponse> =
         identityClient.listBlocks(userId).blocksList.map { block ->
             BlockResponse(
                 blockedUserId = block.blockedUserId,
@@ -41,5 +40,4 @@ class BlockController(private val identityClient: IdentityClient) {
                 createdAt = block.createdAt,
             )
         }
-    }
 }

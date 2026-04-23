@@ -3,33 +3,38 @@ package com.mungcle.gateway.config
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
+import reactor.core.publisher.Mono
 
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity
 class SecurityConfig(private val jwtFilter: JwtAuthenticationFilter) {
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http
+    fun securityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+        return http
             .csrf { it.disable() }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authorizeHttpRequests {
-                it.requestMatchers("/v1/auth/**", "/v1/health", "/actuator/**").permitAll()
-                    .anyRequest().authenticated()
+            .authorizeExchange {
+                it.pathMatchers("/v1/auth/**", "/v1/health", "/actuator/**").permitAll()
+                    .anyExchange().authenticated()
             }
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
             .exceptionHandling {
-                it.authenticationEntryPoint { _, response, _ ->
-                    response.status = 401
-                    response.contentType = "application/json"
-                    response.writer.write("""{"statusCode":401,"code":"AUTH_TOKEN_INVALID","message":"인증이 필요합니다"}""")
+                it.authenticationEntryPoint { exchange, _ ->
+                    val response = exchange.response
+                    response.statusCode = HttpStatus.UNAUTHORIZED
+                    response.headers.contentType = MediaType.APPLICATION_JSON
+                    val body = """{"statusCode":401,"code":"AUTH_TOKEN_INVALID","message":"인증이 필요합니다"}"""
+                    val buffer: DataBuffer = response.bufferFactory().wrap(body.toByteArray())
+                    response.writeWith(Mono.just(buffer))
                 }
             }
-        return http.build()
+            .build()
     }
 }

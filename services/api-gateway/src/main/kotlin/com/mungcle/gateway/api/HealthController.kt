@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RestController
 class HealthController {
 
     @GetMapping
-    fun health(): Map<String, String> = mapOf("status" to "UP")
+    suspend fun health(): Map<String, String> = mapOf("status" to "UP")
 }
