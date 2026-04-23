@@ -20,11 +20,13 @@ class ApiVersionFilter : OncePerRequestFilter() {
         } else {
             ApiVersion.LATEST
         }
+        request.setAttribute(REQUEST_ATTR_KEY, resolved)
         response.setHeader(VERSION_HEADER, resolved.date.toString())
         filterChain.doFilter(request, response)
     }
 
     companion object {
         const val VERSION_HEADER = "Mungcle-Version"
+        const val REQUEST_ATTR_KEY = "mungcle.api.version"
     }
 }
