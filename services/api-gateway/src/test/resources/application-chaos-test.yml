@@ -1,0 +1,116 @@
+spring:
+  application:
+    name: api-gateway-chaos-test
+
+grpc:
+  client:
+    identity:
+      address: static://localhost:50051
+      negotiation-type: plaintext
+    pet-profile:
+      address: static://localhost:50052
+      negotiation-type: plaintext
+    walks:
+      address: static://localhost:50053
+      negotiation-type: plaintext
+    social:
+      address: static://localhost:50054
+      negotiation-type: plaintext
+    notification:
+      address: static://localhost:50055
+      negotiation-type: plaintext
+
+gateway:
+  rate-limit:
+    authenticated:
+      limit: 100
+      duration: 1m
+    anonymous:
+      limit: 20
+      duration: 1m
+
+# 테스트용 단축 설정 — 빠른 상태 전이를 위해 윈도우/대기 시간 축소
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 1s
+        permittedNumberOfCallsInHalfOpenState: 2
+        slowCallDurationThreshold: 3s
+        slowCallRateThreshold: 80
+        recordExceptions:
+          - io.grpc.StatusException
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 10ms
+        enableExponentialBackoff: false
+        retryExceptions:
+          - io.grpc.StatusException
+          - io.grpc.StatusRuntimeException
+        ignoreExceptions:
+          - com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+        cancelRunningFuture: true
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: 25
+        maxWaitDuration: 500ms
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
