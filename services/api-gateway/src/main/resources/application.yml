@@ -38,9 +38,6 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
-        recordExceptions:
-          - io.grpc.StatusException
-          - io.grpc.StatusRuntimeException
     instances:
       identity-service:
         baseConfig: default

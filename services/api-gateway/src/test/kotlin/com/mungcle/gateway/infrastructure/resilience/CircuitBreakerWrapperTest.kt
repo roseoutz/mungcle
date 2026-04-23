@@ -19,12 +19,12 @@ class CircuitBreakerWrapperTest {
 
     @BeforeEach
     fun setUp() {
+        // recordExceptions는 설정하지 않음 — CircuitBreakerWrapper가 shouldRecord()로 직접 제어
         val config = CircuitBreakerConfig.custom()
             .slidingWindowSize(5)
             .minimumNumberOfCalls(5)
             .failureRateThreshold(100f) // 100%로 설정하여 5번 실패 후 즉시 오픈
             .waitDurationInOpenState(Duration.ofSeconds(60))
-            .recordExceptions(StatusException::class.java)
             .build()
         registry = CircuitBreakerRegistry.of(config)
         wrapper = CircuitBreakerWrapper(registry)
@@ -70,5 +70,20 @@ class CircuitBreakerWrapperTest {
 
         val result = wrapper.execute("closed-service") { 42 }
         assertEquals(42, result)
+    }
+
+    @Test
+    fun `비즈니스 에러(NOT_FOUND)는 CB 실패로 기록되지 않아 OPEN 상태가 되지 않는다`() = runTest {
+        val cb = registry.circuitBreaker("business-error-service")
+
+        // NOT_FOUND 5번 던져도 CB는 CLOSED 유지
+        repeat(5) {
+            try {
+                wrapper.execute("business-error-service") { throw StatusException(Status.NOT_FOUND) }
+            } catch (_: StatusException) {
+            }
+        }
+
+        assertEquals(CircuitBreaker.State.CLOSED, cb.state)
     }
 }
