@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/dogs")
@@ -44,8 +45,15 @@ class DogController(
         }.toResponse()
 
     @GetMapping
-    suspend fun getDogs(@AuthUser userId: Long): List<DogResponse> =
-        cb.execute("pet-profile-service") { petProfileClient.getDogsByOwner(userId) }.map { it.toResponse() }
+    suspend fun getDogs(@AuthUser userId: Long, exchange: ServerWebExchange): List<DogResponse> {
+        // CB OPEN 시 빈 배열 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val dogs = cb.executeWithFallback(
+            name = "pet-profile-service",
+            fallback = emptyList(),
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { petProfileClient.getDogsByOwner(userId) }
+        return dogs.map { it.toResponse() }
+    }
 
     @GetMapping("/{id}")
     suspend fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse =

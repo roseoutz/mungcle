@@ -6,6 +6,7 @@ import com.mungcle.gateway.dto.CreateDogRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
 import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
+import com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException
 import com.mungcle.gateway.infrastructure.security.AuthUserArgumentResolver
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import com.mungcle.proto.identity.v1.validateTokenResponse
@@ -40,6 +41,10 @@ class DogControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        // executeWithFallback 기본 동작 — block 실행 (CB CLOSED 시)
+        coEvery { cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            arg<suspend () -> Any?>(3)()
+        }
     }
 
     private val fakeDog = dogInfo {
@@ -89,6 +94,44 @@ class DogControllerTest {
             .expectStatus().isOk
             .expectBody()
             .jsonPath("$[0].name").isEqualTo("초코")
+    }
+
+    @Test
+    fun `반려견 목록 — CB OPEN 시 빈 배열과 X-Fallback 헤더 반환`() {
+        setupAuth()
+        // CB OPEN 시 executeWithFallback이 fallback(emptyList)을 반환하고 onFallback 콜백을 호출함
+        coEvery {
+            cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>())
+        } coAnswers {
+            val onFallback = thirdArg<suspend () -> Unit>()
+            onFallback()
+            secondArg<Any?>() // fallback 값 반환
+        }
+
+        webTestClient.get().uri("/v1/dogs")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueEquals("X-Fallback", "true")
+            .expectBody()
+            .jsonPath("$").isArray
+            .jsonPath("$.length()").isEqualTo(0)
+    }
+
+    @Test
+    fun `반려견 단건 조회 — CB OPEN 시 503 반환`() {
+        setupAuth()
+        coEvery { cb.execute(any(), any<suspend () -> Any?>()) } throws
+            ServiceUnavailableException("pet-profile-service", io.github.resilience4j.circuitbreaker.CallNotPermittedException.createCallNotPermittedException(
+                io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry.ofDefaults().circuitBreaker("test").also {
+                    it.transitionToOpenState()
+                }
+            ))
+
+        webTestClient.get().uri("/v1/dogs/1")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isEqualTo(503)
     }
 
     @Test

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/walks")
@@ -49,14 +50,26 @@ class WalkController(
         @AuthUser userId: Long,
         @RequestParam lat: Double,
         @RequestParam lng: Double,
+        exchange: ServerWebExchange,
     ): NearbyWalksResponse {
         val gridCell = GridCell.fromCoordinates(lat, lng).value
 
+        // CB OPEN 시 빈 목록 반환 — X-Fallback 헤더로 클라이언트에 알림
         val (blockedUserIds, nearbyWalks) = coroutineScope {
-            val blocked = async { cb.execute("identity-service") { identityClient.getBlockedUserIds(userId) } }
-            val walks = async { cb.execute("walks-service") { walksClient.getNearbyWalks(gridCell, userId, emptyList()) } }
+            val blocked = async {
+                cb.executeWithFallback("identity-service", emptyList()) { identityClient.getBlockedUserIds(userId) }
+            }
+            val walks = async {
+                cb.executeWithFallback(
+                    name = "walks-service",
+                    fallback = emptyList(),
+                    onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+                ) { walksClient.getNearbyWalks(gridCell, userId, emptyList()) }
+            }
             blocked.await() to walks.await()
         }
+
+        if (nearbyWalks.isEmpty()) return NearbyWalksResponse(emptyList())
 
         val filteredWalks = nearbyWalks.filter { it.userId !in blockedUserIds }
 
@@ -100,8 +113,15 @@ class WalkController(
     }
 
     @GetMapping("/me/active")
-    suspend fun getMyActiveWalks(@AuthUser userId: Long): List<WalkResponse> =
-        cb.execute("walks-service") { walksClient.getMyActiveWalks(userId) }.map { it.toResponse() }
+    suspend fun getMyActiveWalks(@AuthUser userId: Long, exchange: ServerWebExchange): List<WalkResponse> {
+        // CB OPEN 시 빈 배열 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val walks = cb.executeWithFallback(
+            name = "walks-service",
+            fallback = emptyList(),
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { walksClient.getMyActiveWalks(userId) }
+        return walks.map { it.toResponse() }
+    }
 
     private fun WalkInfo.toResponse() = WalkResponse(
         id = id,

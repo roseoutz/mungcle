@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/blocks")
@@ -36,12 +37,20 @@ class BlockController(
     }
 
     @GetMapping
-    suspend fun listBlocks(@AuthUser userId: Long): List<BlockResponse> =
-        cb.execute("identity-service") { identityClient.listBlocks(userId) }.blocksList.map { block ->
+    suspend fun listBlocks(@AuthUser userId: Long, exchange: ServerWebExchange): List<BlockResponse> {
+        // CB OPEN 시 빈 배열 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val response = cb.executeWithFallback(
+            name = "identity-service",
+            fallback = null,
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { identityClient.listBlocks(userId) }
+            ?: return emptyList()
+        return response.blocksList.map { block ->
             BlockResponse(
                 blockedUserId = block.blockedUserId,
                 blockedNickname = block.blockedNickname,
                 createdAt = block.createdAt,
             )
         }
+    }
 }

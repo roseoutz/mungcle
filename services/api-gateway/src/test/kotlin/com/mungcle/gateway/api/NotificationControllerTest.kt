@@ -39,6 +39,10 @@ class NotificationControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        // executeWithFallback 기본 동작 — block 실행 (CB CLOSED 시)
+        coEvery { cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            arg<suspend () -> Any?>(3)()
+        }
     }
 
     private val fakeNotification = notificationInfo {
@@ -83,6 +87,28 @@ class NotificationControllerTest {
             .header("Authorization", "Bearer valid-token")
             .exchange()
             .expectStatus().isNoContent
+    }
+
+    @Test
+    fun `알림 목록 — CB OPEN 시 빈 배열과 X-Fallback 헤더 반환`() {
+        setupAuth()
+        coEvery {
+            cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>())
+        } coAnswers {
+            val onFallback = thirdArg<suspend () -> Unit>()
+            onFallback()
+            null as Any? // fallback 값
+        }
+
+        webTestClient.get().uri("/v1/notifications")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueEquals("X-Fallback", "true")
+            .expectBody()
+            .jsonPath("$.notifications").isArray
+            .jsonPath("$.notifications.length()").isEqualTo(0)
+            .jsonPath("$.nextCursor").doesNotExist()
     }
 
     @Test

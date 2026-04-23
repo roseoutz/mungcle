@@ -41,6 +41,10 @@ class GreetingControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        // executeWithFallback 기본 동작 — block 실행 (CB CLOSED 시)
+        coEvery { cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            arg<suspend () -> Any?>(3)()
+        }
     }
 
     private val fakeGreeting = greetingInfo {
@@ -116,6 +120,27 @@ class GreetingControllerTest {
             .expectStatus().isOk
             .expectBody()
             .jsonPath("$[0].id").isEqualTo(200L)
+    }
+
+    @Test
+    fun `인사 목록 — CB OPEN 시 빈 배열과 X-Fallback 헤더 반환`() {
+        setupAuth()
+        coEvery {
+            cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>())
+        } coAnswers {
+            val onFallback = thirdArg<suspend () -> Unit>()
+            onFallback()
+            secondArg<Any?>() // emptyList() (fallback 값)
+        }
+
+        webTestClient.get().uri("/v1/greetings")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueEquals("X-Fallback", "true")
+            .expectBody()
+            .jsonPath("$").isArray
+            .jsonPath("$.length()").isEqualTo(0)
     }
 
     @Test

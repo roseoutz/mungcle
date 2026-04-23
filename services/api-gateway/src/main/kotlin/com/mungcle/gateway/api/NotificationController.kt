@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.http.HttpStatus
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/notifications")
@@ -29,8 +30,16 @@ class NotificationController(
         @AuthUser userId: Long,
         @RequestParam(required = false) cursor: Long?,
         @RequestParam(defaultValue = "20") limit: Int,
+        exchange: ServerWebExchange,
     ): NotificationsResponse {
-        val response = cb.execute("notification-service") { notificationClient.listNotifications(userId, cursor, limit) }
+        // CB OPEN 시 빈 목록 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val response = cb.executeWithFallback(
+            name = "notification-service",
+            fallback = null,
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { notificationClient.listNotifications(userId, cursor, limit) }
+            ?: return NotificationsResponse(notifications = emptyList(), nextCursor = null)
+
         return NotificationsResponse(
             notifications = response.notificationsList.map { notification ->
                 @Suppress("UNCHECKED_CAST")

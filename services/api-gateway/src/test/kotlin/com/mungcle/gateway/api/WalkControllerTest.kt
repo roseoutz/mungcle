@@ -49,6 +49,10 @@ class WalkControllerTest {
     @BeforeEach
     fun setupCb() {
         coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        // executeWithFallback 기본 동작 — block 실행 (CB CLOSED 시)
+        coEvery { cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            arg<suspend () -> Any?>(3)()
+        }
     }
 
     private val fakeWalkInfo = walkInfo {
@@ -165,6 +169,47 @@ class WalkControllerTest {
             .expectStatus().isOk
             .expectBody()
             .jsonPath("$[0].id").isEqualTo(100L)
+    }
+
+    @Test
+    fun `내 활성 산책 — CB OPEN 시 빈 배열과 X-Fallback 헤더 반환`() {
+        setupAuth()
+        coEvery {
+            cb.executeWithFallback(any(), any(), any(), any<suspend () -> Any?>())
+        } coAnswers {
+            val onFallback = thirdArg<suspend () -> Unit>()
+            onFallback()
+            secondArg<Any?>()
+        }
+
+        webTestClient.get().uri("/v1/walks/me/active")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueEquals("X-Fallback", "true")
+            .expectBody()
+            .jsonPath("$").isArray
+            .jsonPath("$.length()").isEqualTo(0)
+    }
+
+    @Test
+    fun `산책 시작 — CB OPEN 시 503 반환`() {
+        setupAuth()
+        coEvery { cb.execute(any(), any<suspend () -> Any?>()) } throws
+            com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException(
+                "walks-service",
+                io.github.resilience4j.circuitbreaker.CallNotPermittedException.createCallNotPermittedException(
+                    io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry.ofDefaults()
+                        .circuitBreaker("test-walks").also { it.transitionToOpenState() }
+                ),
+            )
+
+        webTestClient.post().uri("/v1/walks/start")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+            .bodyValue(StartWalkRequest(dogId = 1L, lat = 37.5, lng = 127.0, open = true))
+            .exchange()
+            .expectStatus().isEqualTo(503)
     }
 
     @Test

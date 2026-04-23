@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 
 @RestController
 @RequestMapping("/v1/greetings")
@@ -67,11 +68,17 @@ class GreetingController(
         @AuthUser userId: Long,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) direction: String?,
+        exchange: ServerWebExchange,
     ): List<GreetingResponse> {
         val statusFilter = status?.let { parseGreetingStatus(it) }
         val directionFilter = direction?.let { parseGreetingDirection(it) }
-        return cb.execute("social-service") { socialClient.listGreetings(userId, statusFilter, directionFilter) }
-            .map { it.toResponse() }
+        // CB OPEN 시 빈 배열 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val greetings = cb.executeWithFallback(
+            name = "social-service",
+            fallback = emptyList(),
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { socialClient.listGreetings(userId, statusFilter, directionFilter) }
+        return greetings.map { it.toResponse() }
     }
 
     @PostMapping("/{id}/messages")
@@ -90,9 +97,19 @@ class GreetingController(
         }.toMessageResponse()
 
     @GetMapping("/{id}/messages")
-    suspend fun listMessages(@AuthUser userId: Long, @PathVariable id: Long): List<MessageResponse> =
-        cb.execute("social-service") { socialClient.listMessages(greetingId = id, userId = userId) }
-            .map { it.toMessageResponse() }
+    suspend fun listMessages(
+        @AuthUser userId: Long,
+        @PathVariable id: Long,
+        exchange: ServerWebExchange,
+    ): List<MessageResponse> {
+        // CB OPEN 시 빈 배열 반환 — X-Fallback 헤더로 클라이언트에 알림
+        val messages = cb.executeWithFallback(
+            name = "social-service",
+            fallback = emptyList(),
+            onFallback = { exchange.response.headers.set("X-Fallback", "true") },
+        ) { socialClient.listMessages(greetingId = id, userId = userId) }
+        return messages.map { it.toMessageResponse() }
+    }
 
     private fun parseGreetingStatus(value: String): GreetingStatus = when (value.uppercase()) {
         "PENDING" -> GreetingStatus.GREETING_STATUS_PENDING
