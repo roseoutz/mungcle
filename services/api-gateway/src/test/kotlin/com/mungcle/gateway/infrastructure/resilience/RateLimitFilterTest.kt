@@ -136,31 +136,32 @@ class RateLimitFilterTest {
     // -----------------------------------------------
 
     @Test
-    fun `X-Forwarded-For 헤더가 있으면 첫 번째 IP를 키로 사용한다`() {
+    fun `X-Forwarded-For 헤더가 있으면 마지막 IP를 키로 사용한다`() {
+        // 스푸핑 방지: "client, proxy1, proxy2" 형태에서 가장 마지막(신뢰 가능 프록시 추가) IP 사용
         val exchange1 = MockServerWebExchange.from(
             MockServerHttpRequest.get("/test")
-                .header("X-Forwarded-For", "192.168.1.1, 10.0.0.1")
+                .header("X-Forwarded-For", "1.2.3.4, 10.0.0.1")
                 .build()
         )
         val exchange2 = MockServerWebExchange.from(
             MockServerHttpRequest.get("/test")
-                .header("X-Forwarded-For", "192.168.1.1, 10.0.0.2")
+                .header("X-Forwarded-For", "5.6.7.8, 10.0.0.1")
                 .build()
         )
         val chain = passThroughChain()
 
-        // limit=2이므로 두 번 요청 후 세 번째는 429
+        // limit=2이므로 같은 마지막 IP(10.0.0.1)로 두 번 요청
         filter.filter(exchange1, chain).block()
         filter.filter(exchange2, chain).block()
 
         val exchange3 = MockServerWebExchange.from(
             MockServerHttpRequest.get("/test")
-                .header("X-Forwarded-For", "192.168.1.1, 10.0.0.3")
+                .header("X-Forwarded-For", "9.9.9.9, 10.0.0.1")
                 .build()
         )
         StepVerifier.create(filter.filter(exchange3, chain)).verifyComplete()
 
-        // 같은 IP(192.168.1.1)이므로 3번째 요청 → 429
+        // 마지막 IP(10.0.0.1)가 동일하므로 3번째 요청 → 429
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, exchange3.response.statusCode)
     }
 

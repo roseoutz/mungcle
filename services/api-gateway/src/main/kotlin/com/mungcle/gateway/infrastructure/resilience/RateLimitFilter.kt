@@ -2,9 +2,9 @@ package com.mungcle.gateway.infrastructure.resilience
 
 import com.mungcle.gateway.config.RateLimitProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * - 인증된 사용자: userId 기준 100 req/min (기본값)
  * - 미인증 사용자: IP 기준 20 req/min (기본값)
  * - 초과 시 429 Too Many Requests + Retry-After 헤더 반환
+ * - 인증 필터(SecurityWebFiltersOrder.AUTHENTICATION = 100) 이후에 실행되어야 userId를 읽을 수 있음
  */
 @Component
-@Order(-10) // SecurityWebFiltersOrder.AUTHENTICATION(200) 이후, 비즈니스 필터보다 앞
 @EnableConfigurationProperties(RateLimitProperties::class)
 class RateLimitFilter(
     private val props: RateLimitProperties,
@@ -30,6 +30,16 @@ class RateLimitFilter(
 
     // key -> RateLimitBucket (요청 카운터 + 윈도우 시작 시각)
     private val buckets = ConcurrentHashMap<String, RateLimitBucket>()
+
+    /**
+     * 메모리 누수 방지: 만료된 버킷을 매 1분마다 제거한다.
+     * 마지막 윈도우 시작 시각 기준으로 두 윈도우 이상 경과한 항목을 삭제.
+     */
+    @Scheduled(fixedRate = 60_000)
+    fun evictExpiredBuckets() {
+        val now = Instant.now().toEpochMilli()
+        buckets.entries.removeIf { (_, bucket) -> bucket.isExpired(now) }
+    }
 
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
         return ReactiveSecurityContextHolder.getContext()
@@ -56,7 +66,7 @@ class RateLimitFilter(
                 } else {
                     // 429 Too Many Requests
                     response.statusCode = HttpStatus.TOO_MANY_REQUESTS
-                    response.headers.contentType = MediaType.APPLICATION_JSON
+                    response.headers.contentType = MediaType("application", "json", Charsets.UTF_8)
                     response.headers["Retry-After"] = result.resetInSeconds.toString()
                     val body = """{"statusCode":429,"code":"RATE_LIMIT_EXCEEDED","message":"요청 한도를 초과했습니다. 잠시 후 다시 시도하세요"}"""
                     val buffer = response.bufferFactory().wrap(body.toByteArray())
@@ -68,8 +78,9 @@ class RateLimitFilter(
     private fun resolveClientIp(exchange: ServerWebExchange): String {
         val forwarded = exchange.request.headers.getFirst("X-Forwarded-For")
         if (!forwarded.isNullOrBlank()) {
-            // X-Forwarded-For 는 "client, proxy1, proxy2" 형태 — 첫 번째가 실제 클라이언트
-            return forwarded.split(",").first().trim()
+            // X-Forwarded-For 는 "client, proxy1, proxy2" 형태.
+            // 스푸핑 방지를 위해 가장 마지막 항목(신뢰 가능한 가장 가까운 프록시가 추가한 IP)을 사용.
+            return forwarded.split(",").last().trim()
         }
         return exchange.request.remoteAddress?.address?.hostAddress ?: "unknown"
     }
@@ -82,32 +93,33 @@ class RateLimitFilter(
 
 /**
  * 고정 윈도우(Fixed Window) 방식 토큰 버킷.
- * ConcurrentHashMap에 저장되며 스레드 안전하게 구현.
+ * AtomicInteger CAS만으로 락 없이 스레드 안전하게 구현.
+ * 윈도우 리셋은 windowStart AtomicLong CAS로 단 한 스레드만 수행.
  */
 class RateLimitBucket(
     private val maxRequests: Int,
     private val windowMs: Long,
 ) {
     private val counter = AtomicInteger(0)
-
-    @Volatile
-    private var windowStart: Long = Instant.now().toEpochMilli()
+    private val windowStart = java.util.concurrent.atomic.AtomicLong(Instant.now().toEpochMilli())
 
     /**
      * 요청 하나를 소비하고 결과를 반환한다.
-     * 윈도우가 만료됐으면 카운터를 리셋한다.
+     * 윈도우가 만료됐으면 CAS로 windowStart를 교체하고 카운터를 리셋한다.
      */
-    @Synchronized
     fun tryConsume(): RateLimitResult {
         val now = Instant.now().toEpochMilli()
-        if (now - windowStart >= windowMs) {
-            // 새 윈도우 시작
-            counter.set(0)
-            windowStart = now
+        val start = windowStart.get()
+        if (now - start >= windowMs) {
+            // 윈도우 만료 — CAS로 단 한 스레드만 리셋 수행
+            if (windowStart.compareAndSet(start, now)) {
+                counter.set(0)
+            }
         }
 
         val current = counter.incrementAndGet()
-        val resetInSeconds = ((windowStart + windowMs - now) / 1000).coerceAtLeast(0)
+        val currentStart = windowStart.get()
+        val resetInSeconds = ((currentStart + windowMs - now) / 1000).coerceAtLeast(0)
         val remaining = (maxRequests - current).coerceAtLeast(0)
 
         return RateLimitResult(
@@ -117,6 +129,12 @@ class RateLimitBucket(
             resetInSeconds = resetInSeconds,
         )
     }
+
+    /**
+     * 버킷이 만료 상태인지 확인한다 (eviction 판단용).
+     * 마지막 윈도우 시작으로부터 2배 이상 경과하면 만료로 간주.
+     */
+    fun isExpired(now: Long): Boolean = now - windowStart.get() >= windowMs * 2
 }
 
 data class RateLimitResult(
