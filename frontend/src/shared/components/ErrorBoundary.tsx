@@ -6,17 +6,20 @@ import { typography } from '../../constants/typography';
 interface Props {
   children: React.ReactNode;
   onRetry?: () => void;
+  // 커스텀 폴백 UI — ReactNode 또는 렌더 함수(error, retry) 모두 허용
+  fallback?: React.ReactNode | ((error: Error, retry: () => void) => React.ReactNode);
 }
 
 interface State {
   hasError: boolean;
+  error: Error | null;
   isNetworkError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, isNetworkError: false };
+    this.state = { hasError: false, error: null, isNetworkError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -25,27 +28,46 @@ export class ErrorBoundary extends Component<Props, State> {
       error.message.includes('Network') ||
       error.message.includes('fetch') ||
       error.message.includes('연결');
-    return { hasError: true, isNetworkError };
+    return { hasError: true, error, isNetworkError };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // 렌더 에러 로깅 — 프로덕션에서는 Sentry 등으로 대체
+    console.error('[ErrorBoundary] render error:', error.message, info.componentStack);
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, isNetworkError: false });
+    this.setState({ hasError: false, error: null, isNetworkError: false });
     this.props.onRetry?.();
   };
 
   render() {
-    if (!this.state.hasError) {
-      return this.props.children;
+    const { hasError, error, isNetworkError } = this.state;
+    const { children, fallback } = this.props;
+
+    if (!hasError) {
+      return children;
+    }
+
+    // 커스텀 폴백 처리 — 렌더 함수 또는 ReactNode 모두 지원
+    if (fallback !== undefined) {
+      if (typeof fallback === 'function') {
+        return (fallback as (error: Error, retry: () => void) => React.ReactNode)(
+          error ?? new Error('Unknown error'),
+          this.handleRetry,
+        );
+      }
+      return fallback;
     }
 
     return (
       <View style={styles.container}>
-        <Text style={styles.icon}>{this.state.isNetworkError ? '📡' : '⚠️'}</Text>
+        <Text style={styles.icon}>{isNetworkError ? '📡' : '⚠️'}</Text>
         <Text style={styles.title}>
-          {this.state.isNetworkError ? '연결할 수 없어요' : '오류가 발생했어요'}
+          {isNetworkError ? '연결할 수 없어요' : '오류가 발생했어요'}
         </Text>
         <Text style={styles.message}>
-          {this.state.isNetworkError
+          {isNetworkError
             ? '인터넷 연결을 확인하고 다시 시도해주세요'
             : '잠시 후 다시 시도해주세요'}
         </Text>
