@@ -10,6 +10,7 @@ import com.mungcle.gateway.dto.WalkResponse
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
 import com.mungcle.gateway.infrastructure.grpc.WalksClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import com.mungcle.proto.walks.v1.WalkInfo
 import com.mungcle.proto.walks.v1.WalkType
@@ -30,17 +31,18 @@ class WalkController(
     private val walksClient: WalksClient,
     private val identityClient: IdentityClient,
     private val petProfileClient: PetProfileClient,
+    private val cb: CircuitBreakerWrapper,
 ) {
 
     @PostMapping("/start")
     suspend fun startWalk(@AuthUser userId: Long, @Valid @RequestBody req: StartWalkRequest): WalkResponse {
         val walkType = if (req.open) WalkType.WALK_TYPE_OPEN else WalkType.WALK_TYPE_SOLO
-        return walksClient.startWalk(userId, req.dogId, walkType, req.lat, req.lng).toResponse()
+        return cb.execute("walks-service") { walksClient.startWalk(userId, req.dogId, walkType, req.lat, req.lng) }.toResponse()
     }
 
     @PostMapping("/{id}/stop")
     suspend fun stopWalk(@AuthUser userId: Long, @PathVariable id: Long): WalkResponse =
-        walksClient.stopWalk(walkId = id, userId = userId).toResponse()
+        cb.execute("walks-service") { walksClient.stopWalk(walkId = id, userId = userId) }.toResponse()
 
     @GetMapping("/nearby")
     suspend fun getNearbyWalks(
@@ -51,8 +53,8 @@ class WalkController(
         val gridCell = GridCell.fromCoordinates(lat, lng).value
 
         val (blockedUserIds, nearbyWalks) = coroutineScope {
-            val blocked = async { identityClient.getBlockedUserIds(userId) }
-            val walks = async { walksClient.getNearbyWalks(gridCell, userId, emptyList()) }
+            val blocked = async { cb.execute("identity-service") { identityClient.getBlockedUserIds(userId) } }
+            val walks = async { cb.execute("walks-service") { walksClient.getNearbyWalks(gridCell, userId, emptyList()) } }
             blocked.await() to walks.await()
         }
 
@@ -62,8 +64,8 @@ class WalkController(
         val userIds = filteredWalks.map { it.userId }.distinct()
 
         val (dogs, users) = coroutineScope {
-            val dogsDeferred = async { petProfileClient.getDogsByIds(dogIds) }
-            val usersDeferred = async { identityClient.getUsersByIds(userIds) }
+            val dogsDeferred = async { cb.execute("pet-profile-service") { petProfileClient.getDogsByIds(dogIds) } }
+            val usersDeferred = async { cb.execute("identity-service") { identityClient.getUsersByIds(userIds) } }
             dogsDeferred.await() to usersDeferred.await()
         }
 
@@ -99,7 +101,7 @@ class WalkController(
 
     @GetMapping("/me/active")
     suspend fun getMyActiveWalks(@AuthUser userId: Long): List<WalkResponse> =
-        walksClient.getMyActiveWalks(userId).map { it.toResponse() }
+        cb.execute("walks-service") { walksClient.getMyActiveWalks(userId) }.map { it.toResponse() }
 
     private fun WalkInfo.toResponse() = WalkResponse(
         id = id,

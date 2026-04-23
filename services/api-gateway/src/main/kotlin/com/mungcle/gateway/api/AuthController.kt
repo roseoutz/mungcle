@@ -8,6 +8,7 @@ import com.mungcle.gateway.dto.RegisterRequest
 import com.mungcle.gateway.dto.SocialLoginRequest
 import com.mungcle.gateway.dto.UserResponse
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import com.mungcle.proto.identity.v1.AuthResponse
 import jakarta.validation.Valid
@@ -18,29 +19,32 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v1/auth")
-class AuthController(private val identityClient: IdentityClient) {
+class AuthController(
+    private val identityClient: IdentityClient,
+    private val cb: CircuitBreakerWrapper,
+) {
 
     // 기존 카카오 엔드포인트 유지 (하위 호환)
     @PostMapping("/kakao")
     suspend fun kakaoLogin(@Valid @RequestBody req: KakaoLoginRequest): AuthResponseDto =
-        identityClient.authenticateSocial("KAKAO", req.kakaoAccessToken).toDto()
+        cb.execute("identity-service") { identityClient.authenticateSocial("KAKAO", req.kakaoAccessToken) }.toDto()
 
     // 범용 소셜 로그인 엔드포인트
     @PostMapping("/social")
     suspend fun socialLogin(@Valid @RequestBody req: SocialLoginRequest): AuthResponseDto =
-        identityClient.authenticateSocial(req.provider, req.accessToken).toDto()
+        cb.execute("identity-service") { identityClient.authenticateSocial(req.provider, req.accessToken) }.toDto()
 
     @PostMapping("/email/register")
     suspend fun register(@Valid @RequestBody req: RegisterRequest): AuthResponseDto =
-        identityClient.registerEmail(req.email, req.password, req.nickname).toDto()
+        cb.execute("identity-service") { identityClient.registerEmail(req.email, req.password, req.nickname) }.toDto()
 
     @PostMapping("/email/login")
     suspend fun login(@Valid @RequestBody req: LoginRequest): AuthResponseDto =
-        identityClient.loginEmail(req.email, req.password).toDto()
+        cb.execute("identity-service") { identityClient.loginEmail(req.email, req.password) }.toDto()
 
     @PostMapping("/push-token")
     suspend fun updatePushToken(@AuthUser userId: Long, @Valid @RequestBody req: PushTokenRequest) {
-        identityClient.updatePushToken(userId, req.pushToken)
+        cb.execute("identity-service") { identityClient.updatePushToken(userId, req.pushToken) }
     }
 
     private fun AuthResponse.toDto() = AuthResponseDto(

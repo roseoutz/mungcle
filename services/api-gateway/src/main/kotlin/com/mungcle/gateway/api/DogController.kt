@@ -4,6 +4,7 @@ import com.mungcle.gateway.dto.CreateDogRequest
 import com.mungcle.gateway.dto.DogResponse
 import com.mungcle.gateway.dto.UpdateDogRequest
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import com.mungcle.proto.petprofile.v1.DogInfo
 import com.mungcle.proto.petprofile.v1.DogSize
@@ -21,29 +22,34 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v1/dogs")
-class DogController(private val petProfileClient: PetProfileClient) {
+class DogController(
+    private val petProfileClient: PetProfileClient,
+    private val cb: CircuitBreakerWrapper,
+) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     suspend fun createDog(@AuthUser userId: Long, @Valid @RequestBody req: CreateDogRequest): DogResponse =
-        petProfileClient.createDog(
-            ownerId = userId,
-            dogName = req.name,
-            dogBreed = req.breed,
-            dogSize = parseDogSize(req.size),
-            dogTemperaments = req.temperaments,
-            dogSociability = req.sociability,
-            photoPath = req.photoPath,
-            vaccinationPhotoPath = req.vaccinationPhotoPath,
-        ).toResponse()
+        cb.execute("pet-profile-service") {
+            petProfileClient.createDog(
+                ownerId = userId,
+                dogName = req.name,
+                dogBreed = req.breed,
+                dogSize = parseDogSize(req.size),
+                dogTemperaments = req.temperaments,
+                dogSociability = req.sociability,
+                photoPath = req.photoPath,
+                vaccinationPhotoPath = req.vaccinationPhotoPath,
+            )
+        }.toResponse()
 
     @GetMapping
     suspend fun getDogs(@AuthUser userId: Long): List<DogResponse> =
-        petProfileClient.getDogsByOwner(userId).map { it.toResponse() }
+        cb.execute("pet-profile-service") { petProfileClient.getDogsByOwner(userId) }.map { it.toResponse() }
 
     @GetMapping("/{id}")
     suspend fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse =
-        petProfileClient.getDog(id).toResponse()
+        cb.execute("pet-profile-service") { petProfileClient.getDog(id) }.toResponse()
 
     @PatchMapping("/{id}")
     suspend fun updateDog(
@@ -51,22 +57,24 @@ class DogController(private val petProfileClient: PetProfileClient) {
         @PathVariable id: Long,
         @Valid @RequestBody req: UpdateDogRequest,
     ): DogResponse =
-        petProfileClient.updateDog(
-            dogId = id,
-            requesterId = userId,
-            dogName = req.name,
-            dogBreed = req.breed,
-            dogSize = req.size?.let { parseDogSize(it) },
-            dogTemperaments = req.temperaments,
-            dogSociability = req.sociability,
-            photoPath = req.photoPath,
-            vaccinationPhotoPath = req.vaccinationPhotoPath,
-        ).toResponse()
+        cb.execute("pet-profile-service") {
+            petProfileClient.updateDog(
+                dogId = id,
+                requesterId = userId,
+                dogName = req.name,
+                dogBreed = req.breed,
+                dogSize = req.size?.let { parseDogSize(it) },
+                dogTemperaments = req.temperaments,
+                dogSociability = req.sociability,
+                photoPath = req.photoPath,
+                vaccinationPhotoPath = req.vaccinationPhotoPath,
+            )
+        }.toResponse()
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     suspend fun deleteDog(@AuthUser userId: Long, @PathVariable id: Long) {
-        petProfileClient.deleteDog(dogId = id, ownerId = userId)
+        cb.execute("pet-profile-service") { petProfileClient.deleteDog(dogId = id, ownerId = userId) }
     }
 
     private fun parseDogSize(size: String): DogSize = when (size.uppercase()) {
