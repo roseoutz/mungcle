@@ -39,9 +39,10 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 
-# Proto generated code
+# Proto generated code (자동 생성 파일 — 커밋 금지)
 common/grpc-client/src/main/java/
-common/grpc-client/src/main/kotlin/
+# proto 생성 코드만 제외: com/mungcle/proto/** 하위만 무시
+common/grpc-client/src/main/kotlin/com/mungcle/proto/
 
 # Docker volumes
 postgres-data/

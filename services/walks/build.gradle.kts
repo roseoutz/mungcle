@@ -38,6 +38,10 @@ dependencies {
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:${property("hypersistenceVersion")}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
 
+    // Resilience4j Circuit Breaker — 서비스 간 gRPC 호출 보호
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-kotlin:2.2.0")
+
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
 
