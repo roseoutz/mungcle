@@ -1,0 +1,146 @@
+global:
+  namespace: mungcle
+  image:
+    registry: ""          # empty = local (minikube)
+    pullPolicy: IfNotPresent
+
+# ─── PostgreSQL ──────────────────────────────────────────────────────────────
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  host: postgres
+  port: 5432
+  database: mungcle
+  username: postgres
+  # password comes from secret.yaml (key: postgres-password)
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ─── Kafka ───────────────────────────────────────────────────────────────────
+kafka:
+  enabled: true
+  image: apache/kafka:3.9.0
+  bootstrapServers: "kafka:9092"
+  port: 9092
+  controllerPort: 9093
+  clusterId: mungcle-kafka-cluster-001
+  storage: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# 관측성 스택 (otel-collector, tempo, prometheus, grafana)은 docker-compose로 관리.
+# K8s 배포 시 별도 Helm chart (prometheus-stack, grafana 등) 사용 권장.
+
+# ─── Application Services ────────────────────────────────────────────────────
+services:
+  identity:
+    replicas: 1
+    image: mungcle/identity
+    tag: latest
+    port: 50051
+    tsidNode: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  petProfile:
+    replicas: 1
+    image: mungcle/pet-profile
+    tag: latest
+    port: 50052
+    tsidNode: 3
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  walks:
+    replicas: 1
+    image: mungcle/walks
+    tag: latest
+    port: 50053
+    tsidNode: 4
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  social:
+    replicas: 1
+    image: mungcle/social
+    tag: latest
+    port: 50054
+    tsidNode: 5
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  notification:
+    replicas: 1
+    image: mungcle/notification
+    tag: latest
+    port: 50055
+    tsidNode: 6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  apiGateway:
+    replicas: 1
+    image: mungcle/api-gateway
+    tag: latest
+    port: 4000
+    hpa:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+# ─── Ingress ─────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: mungcle.local
+  annotations: {}
+
+# ─── Secrets (override in production — do not commit real values) ─────────────
+secrets:
+  # 실제 값은 --set 또는 values-secrets.yaml로 주입. 커밋 금지.
+  postgresPassword: ""
+  jwtSecret: ""

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: walks
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "walks") | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.walks.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mungcle.selectorLabels" (dict "component" "walks") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mungcle.selectorLabels" (dict "component" "walks") | nindent 8 }}
+    spec:
+      containers:
+        - name: walks
+          image: {{ include "mungcle.image" (dict "registry" .Values.global.image.registry "image" .Values.services.walks.image "tag" .Values.services.walks.tag) }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.services.walks.port }}
+          envFrom:
+            - configMapRef:
+                name: mungcle-config
+            - configMapRef:
+                name: mungcle-config-db
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mungcle-secret
+                  key: postgres-password
+            - name: TSID_NODE
+              value: {{ .Values.services.walks.tsidNode | quote }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.services.walks.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            grpc:
+              port: {{ .Values.services.walks.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.services.walks.resources | nindent 12 }}
