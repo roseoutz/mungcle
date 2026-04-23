@@ -8,7 +8,6 @@ import com.mungcle.gateway.infrastructure.security.AuthUser
 import com.mungcle.proto.petprofile.v1.DogInfo
 import com.mungcle.proto.petprofile.v1.DogSize
 import jakarta.validation.Valid
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,7 +25,7 @@ class DogController(private val petProfileClient: PetProfileClient) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun createDog(@AuthUser userId: Long, @Valid @RequestBody req: CreateDogRequest): DogResponse = runBlocking {
+    suspend fun createDog(@AuthUser userId: Long, @Valid @RequestBody req: CreateDogRequest): DogResponse =
         petProfileClient.createDog(
             ownerId = userId,
             dogName = req.name,
@@ -37,24 +36,21 @@ class DogController(private val petProfileClient: PetProfileClient) {
             photoPath = req.photoPath,
             vaccinationPhotoPath = req.vaccinationPhotoPath,
         ).toResponse()
-    }
 
     @GetMapping
-    fun getDogs(@AuthUser userId: Long): List<DogResponse> = runBlocking {
+    suspend fun getDogs(@AuthUser userId: Long): List<DogResponse> =
         petProfileClient.getDogsByOwner(userId).map { it.toResponse() }
-    }
 
     @GetMapping("/{id}")
-    fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse = runBlocking {
+    suspend fun getDog(@AuthUser userId: Long, @PathVariable id: Long): DogResponse =
         petProfileClient.getDog(id).toResponse()
-    }
 
     @PatchMapping("/{id}")
-    fun updateDog(
+    suspend fun updateDog(
         @AuthUser userId: Long,
         @PathVariable id: Long,
         @Valid @RequestBody req: UpdateDogRequest,
-    ): DogResponse = runBlocking {
+    ): DogResponse =
         petProfileClient.updateDog(
             dogId = id,
             requesterId = userId,
@@ -66,11 +62,10 @@ class DogController(private val petProfileClient: PetProfileClient) {
             photoPath = req.photoPath,
             vaccinationPhotoPath = req.vaccinationPhotoPath,
         ).toResponse()
-    }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteDog(@AuthUser userId: Long, @PathVariable id: Long): Unit = runBlocking {
+    suspend fun deleteDog(@AuthUser userId: Long, @PathVariable id: Long) {
         petProfileClient.deleteDog(dogId = id, ownerId = userId)
     }
 

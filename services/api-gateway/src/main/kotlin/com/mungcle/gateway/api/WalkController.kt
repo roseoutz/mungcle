@@ -16,7 +16,6 @@ import com.mungcle.proto.walks.v1.WalkType
 import jakarta.validation.Valid
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -34,24 +33,21 @@ class WalkController(
 ) {
 
     @PostMapping("/start")
-    fun startWalk(@AuthUser userId: Long, @Valid @RequestBody req: StartWalkRequest): WalkResponse = runBlocking {
-        val gridCell = GridCell.fromCoordinates(req.lat, req.lng)
+    suspend fun startWalk(@AuthUser userId: Long, @Valid @RequestBody req: StartWalkRequest): WalkResponse {
         val walkType = if (req.open) WalkType.WALK_TYPE_OPEN else WalkType.WALK_TYPE_SOLO
-        // lat/lng는 GridCell 변환에만 사용하고 내부 서비스로 전달하지 않는다
-        walksClient.startWalk(userId, req.dogId, walkType, req.lat, req.lng).toResponse()
+        return walksClient.startWalk(userId, req.dogId, walkType, req.lat, req.lng).toResponse()
     }
 
     @PostMapping("/{id}/stop")
-    fun stopWalk(@AuthUser userId: Long, @PathVariable id: Long): WalkResponse = runBlocking {
+    suspend fun stopWalk(@AuthUser userId: Long, @PathVariable id: Long): WalkResponse =
         walksClient.stopWalk(walkId = id, userId = userId).toResponse()
-    }
 
     @GetMapping("/nearby")
-    fun getNearbyWalks(
+    suspend fun getNearbyWalks(
         @AuthUser userId: Long,
         @RequestParam lat: Double,
         @RequestParam lng: Double,
-    ): NearbyWalksResponse = runBlocking {
+    ): NearbyWalksResponse {
         val gridCell = GridCell.fromCoordinates(lat, lng).value
 
         val (blockedUserIds, nearbyWalks) = coroutineScope {
@@ -74,7 +70,7 @@ class WalkController(
         val dogMap = dogs.associateBy { it.id }
         val userMap = users.associateBy { it.id }
 
-        NearbyWalksResponse(filteredWalks.mapNotNull { walk ->
+        return NearbyWalksResponse(filteredWalks.mapNotNull { walk ->
             val dog = dogMap[walk.dogId] ?: return@mapNotNull null
             val user = userMap[walk.userId] ?: return@mapNotNull null
             NearbyWalkCardResponse(
@@ -102,9 +98,8 @@ class WalkController(
     }
 
     @GetMapping("/me/active")
-    fun getMyActiveWalks(@AuthUser userId: Long): List<WalkResponse> = runBlocking {
+    suspend fun getMyActiveWalks(@AuthUser userId: Long): List<WalkResponse> =
         walksClient.getMyActiveWalks(userId).map { it.toResponse() }
-    }
 
     private fun WalkInfo.toResponse() = WalkResponse(
         id = id,

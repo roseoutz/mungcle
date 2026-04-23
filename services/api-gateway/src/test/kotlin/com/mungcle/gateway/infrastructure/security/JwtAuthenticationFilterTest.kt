@@ -6,25 +6,19 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.mockk.coEvery
 import io.mockk.mockk
-import jakarta.servlet.FilterChain
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.mock.web.MockFilterChain
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockHttpServletResponse
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest
+import org.springframework.mock.web.server.MockServerWebExchange
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.web.server.WebFilterChain
+import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 
 class JwtAuthenticationFilterTest {
 
     private val identityClient: IdentityClient = mockk()
     private val filter = JwtAuthenticationFilter(identityClient)
-
-    @BeforeEach
-    fun setUp() {
-        SecurityContextHolder.clearContext()
-    }
 
     @Test
     fun `유효한 토큰 — SecurityContext에 인증 설정`() {
@@ -34,42 +28,64 @@ class JwtAuthenticationFilterTest {
         }
         coEvery { identityClient.validateToken("valid-token") } returns validResponse
 
-        val request = MockHttpServletRequest().apply {
-            addHeader("Authorization", "Bearer valid-token")
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/test")
+                .header("Authorization", "Bearer valid-token")
+                .build()
+        )
+
+        var capturedPrincipal: Any? = null
+        val chain = WebFilterChain { ex ->
+            ReactiveSecurityContextHolder.getContext()
+                .doOnNext { ctx -> capturedPrincipal = ctx.authentication?.principal }
+                .then()
         }
-        val response = MockHttpServletResponse()
-        val chain = MockFilterChain()
 
-        filter.doFilter(request, response, chain)
+        StepVerifier.create(filter.filter(exchange, chain))
+            .verifyComplete()
 
-        val auth = SecurityContextHolder.getContext().authentication
-        assertEquals(42L, auth?.principal)
+        assertEquals(42L, capturedPrincipal)
     }
 
     @Test
-    fun `토큰 없음 — SecurityContext 비어있음`() {
-        val request = MockHttpServletRequest()
-        val response = MockHttpServletResponse()
-        val chain = MockFilterChain()
+    fun `토큰 없음 — 체인 계속 진행`() {
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/test").build()
+        )
 
-        filter.doFilter(request, response, chain)
+        var chainCalled = false
+        val chain = WebFilterChain { _ ->
+            chainCalled = true
+            Mono.empty()
+        }
 
-        assertNull(SecurityContextHolder.getContext().authentication)
+        StepVerifier.create(filter.filter(exchange, chain))
+            .verifyComplete()
+
+        assertEquals(true, chainCalled)
     }
 
     @Test
     fun `만료된 토큰 — SecurityContext 비어있음`() {
         coEvery { identityClient.validateToken("expired-token") } throws StatusException(Status.UNAUTHENTICATED)
 
-        val request = MockHttpServletRequest().apply {
-            addHeader("Authorization", "Bearer expired-token")
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/test")
+                .header("Authorization", "Bearer expired-token")
+                .build()
+        )
+
+        var authPresent = false
+        val chain = WebFilterChain { _ ->
+            ReactiveSecurityContextHolder.getContext()
+                .doOnNext { ctx -> authPresent = ctx.authentication != null }
+                .then(Mono.empty())
         }
-        val response = MockHttpServletResponse()
-        val chain = MockFilterChain()
 
-        filter.doFilter(request, response, chain)
+        StepVerifier.create(filter.filter(exchange, chain))
+            .verifyComplete()
 
-        assertNull(SecurityContextHolder.getContext().authentication)
+        assertEquals(false, authPresent)
     }
 
     @Test
@@ -80,14 +96,22 @@ class JwtAuthenticationFilterTest {
         }
         coEvery { identityClient.validateToken("invalid-token") } returns invalidResponse
 
-        val request = MockHttpServletRequest().apply {
-            addHeader("Authorization", "Bearer invalid-token")
+        val exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/test")
+                .header("Authorization", "Bearer invalid-token")
+                .build()
+        )
+
+        var authPresent = false
+        val chain = WebFilterChain { _ ->
+            ReactiveSecurityContextHolder.getContext()
+                .doOnNext { ctx -> authPresent = ctx.authentication != null }
+                .then(Mono.empty())
         }
-        val response = MockHttpServletResponse()
-        val chain = MockFilterChain()
 
-        filter.doFilter(request, response, chain)
+        StepVerifier.create(filter.filter(exchange, chain))
+            .verifyComplete()
 
-        assertNull(SecurityContextHolder.getContext().authentication)
+        assertEquals(false, authPresent)
     }
 }

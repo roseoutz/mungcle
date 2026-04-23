@@ -12,7 +12,6 @@ import com.mungcle.proto.social.v1.GreetingInfo
 import com.mungcle.proto.social.v1.GreetingStatus
 import com.mungcle.proto.social.v1.MessageInfo
 import jakarta.validation.Valid
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -31,64 +30,59 @@ class GreetingController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGreeting(
+    suspend fun createGreeting(
         @AuthUser userId: Long,
         @Valid @RequestBody req: CreateGreetingRequest,
-    ): GreetingResponse = runBlocking {
+    ): GreetingResponse =
         socialClient.createGreeting(
             senderUserId = userId,
             senderDogId = req.senderDogId,
             receiverWalkId = req.receiverWalkId,
         ).toResponse()
-    }
 
     @PostMapping("/{id}/respond")
-    fun respondGreeting(
+    suspend fun respondGreeting(
         @AuthUser userId: Long,
         @PathVariable id: Long,
         @Valid @RequestBody req: RespondGreetingRequest,
-    ): GreetingResponse = runBlocking {
+    ): GreetingResponse =
         socialClient.respondGreeting(
             greetingId = id,
             responderUserId = userId,
             accept = req.accept,
         ).toResponse()
-    }
 
     @GetMapping("/{id}")
-    fun getGreeting(@AuthUser userId: Long, @PathVariable id: Long): GreetingResponse = runBlocking {
+    suspend fun getGreeting(@AuthUser userId: Long, @PathVariable id: Long): GreetingResponse =
         socialClient.getGreeting(greetingId = id, userId = userId).toResponse()
-    }
 
     @GetMapping
-    fun listGreetings(
+    suspend fun listGreetings(
         @AuthUser userId: Long,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) direction: String?,
-    ): List<GreetingResponse> = runBlocking {
+    ): List<GreetingResponse> {
         val statusFilter = status?.let { parseGreetingStatus(it) }
         val directionFilter = direction?.let { parseGreetingDirection(it) }
-        socialClient.listGreetings(userId, statusFilter, directionFilter).map { it.toResponse() }
+        return socialClient.listGreetings(userId, statusFilter, directionFilter).map { it.toResponse() }
     }
 
     @PostMapping("/{id}/messages")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendMessage(
+    suspend fun sendMessage(
         @AuthUser userId: Long,
         @PathVariable id: Long,
         @Valid @RequestBody req: SendMessageRequest,
-    ): MessageResponse = runBlocking {
+    ): MessageResponse =
         socialClient.sendMessage(
             greetingId = id,
             senderUserId = userId,
             body = req.body,
         ).toMessageResponse()
-    }
 
     @GetMapping("/{id}/messages")
-    fun listMessages(@AuthUser userId: Long, @PathVariable id: Long): List<MessageResponse> = runBlocking {
+    suspend fun listMessages(@AuthUser userId: Long, @PathVariable id: Long): List<MessageResponse> =
         socialClient.listMessages(greetingId = id, userId = userId).map { it.toMessageResponse() }
-    }
 
     private fun parseGreetingStatus(value: String): GreetingStatus = when (value.uppercase()) {
         "PENDING" -> GreetingStatus.GREETING_STATUS_PENDING

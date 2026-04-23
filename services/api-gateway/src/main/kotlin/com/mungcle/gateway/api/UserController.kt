@@ -8,7 +8,7 @@ import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import jakarta.validation.Valid
 import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.coroutineScope
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -24,7 +24,7 @@ class UserController(
 ) {
 
     @GetMapping("/me")
-    fun getMe(@AuthUser userId: Long): UserDetailResponse = runBlocking {
+    suspend fun getMe(@AuthUser userId: Long): UserDetailResponse = coroutineScope {
         val userDeferred = async { identityClient.getUser(userId) }
         val dogsDeferred = async { petProfileClient.getDogsByOwner(userId) }
         val user = userDeferred.await()
@@ -39,17 +39,17 @@ class UserController(
     }
 
     @PatchMapping("/me")
-    fun updateMe(
+    suspend fun updateMe(
         @AuthUser userId: Long,
         @Valid @RequestBody req: UpdateUserRequest,
-    ): UserResponse = runBlocking {
+    ): UserResponse {
         val user = identityClient.updateUser(
             userId = userId,
             nickname = req.nickname,
             neighborhood = req.neighborhood,
             profilePhotoPath = req.profilePhotoPath,
         )
-        UserResponse(
+        return UserResponse(
             id = user.id,
             nickname = user.nickname,
             neighborhood = user.neighborhood,
@@ -58,7 +58,7 @@ class UserController(
     }
 
     @DeleteMapping("/me")
-    fun deleteMe(@AuthUser userId: Long): Unit = runBlocking {
+    suspend fun deleteMe(@AuthUser userId: Long) {
         identityClient.deleteUser(userId)
     }
 }

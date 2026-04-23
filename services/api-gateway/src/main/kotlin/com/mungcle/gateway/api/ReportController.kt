@@ -4,7 +4,6 @@ import com.mungcle.gateway.dto.CreateReportRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import jakarta.validation.Valid
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,7 +17,7 @@ class ReportController(private val identityClient: IdentityClient) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun createReport(@AuthUser userId: Long, @Valid @RequestBody req: CreateReportRequest): Unit = runBlocking {
+    suspend fun createReport(@AuthUser userId: Long, @Valid @RequestBody req: CreateReportRequest) {
         identityClient.createReport(
             reporterId = userId,
             reportedId = req.reportedUserId!!, // validated non-null by @NotNull
