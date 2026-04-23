@@ -42,6 +42,22 @@ grpc:
 tsid:
   node: ${TSID_NODE:6}
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slowCallDurationThreshold: 3s
+        slowCallRateThreshold: 80
+    instances:
+      identity-service:
+        baseConfig: default
+
 management:
   endpoints:
     web:
