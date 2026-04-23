@@ -1,0 +1,82 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: {{ include "mungcle.namespace" . }}
+  labels:
+    {{- include "mungcle.labels" . | nindent 4 }}
+    {{- include "mungcle.selectorLabels" (dict "component" "kafka") | nindent 4 }}
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "mungcle.selectorLabels" (dict "component" "kafka") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mungcle.selectorLabels" (dict "component" "kafka") | nindent 8 }}
+    spec:
+      containers:
+        - name: kafka
+          image: {{ .Values.kafka.image }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: kafka
+              containerPort: {{ .Values.kafka.port }}
+            - name: controller
+              containerPort: {{ .Values.kafka.controllerPort }}
+          env:
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://0.0.0.0:{{ .Values.kafka.port }},CONTROLLER://0.0.0.0:{{ .Values.kafka.controllerPort }}"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka:{{ .Values.kafka.port }}"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "1@kafka:{{ .Values.kafka.controllerPort }}"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/kafka/data"
+            - name: CLUSTER_ID
+              value: {{ .Values.kafka.clusterId | quote }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:{{ .Values.kafka.port }} > /dev/null 2>&1"
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:{{ .Values.kafka.port }} > /dev/null 2>&1"
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.kafka.resources | nindent 12 }}
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/kafka/data
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.kafka.storage }}
+{{- end }}

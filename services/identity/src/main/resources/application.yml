@@ -37,10 +37,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        grpc.server.calls: true
   tracing:
     sampling:
-      probability: 1.0
+      probability: ${OTEL_SAMPLING_PROBABILITY:1.0}  # 개발: 1.0, 운영: 0.1 권장
   otlp:
     tracing:
       endpoint: http://${OTEL_HOST:localhost}:4318/v1/traces

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/v1/auth")
 class AuthController(private val identityClient: IdentityClient) {
 
     // 기존 카카오 엔드포인트 유지 (하위 호환)

@@ -67,7 +67,7 @@ class DogControllerTest {
         coEvery { petProfileClient.createDog(any(), any(), any(), any(), any(), any(), null, null) } returns fakeDog
 
         mockMvc.perform(
-            post("/api/dogs")
+            post("/v1/dogs")
                 .header("Authorization", "Bearer valid-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
@@ -82,7 +82,7 @@ class DogControllerTest {
         coEvery { petProfileClient.getDogsByOwner(10L) } returns listOf(fakeDog)
 
         mockMvc.perform(
-            get("/api/dogs")
+            get("/v1/dogs")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -92,7 +92,7 @@ class DogControllerTest {
     @Test
     fun `비인증 접근 — 401 반환`() {
         mockMvc.perform(
-            get("/api/dogs")
+            get("/v1/dogs")
         )
             .andExpect(status().isUnauthorized)
     }

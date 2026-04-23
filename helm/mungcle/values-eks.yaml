@@ -1,0 +1,101 @@
+# EKS overrides — apply on top of values.yaml
+# Usage: helm upgrade --install mungcle ./helm/mungcle -f helm/mungcle/values-eks.yaml
+
+global:
+  image:
+    registry: "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com"  # replace with your ECR registry
+    pullPolicy: Always
+
+# On EKS we use RDS/MSK instead of in-cluster infra
+postgres:
+  enabled: false
+  host: "your-rds-endpoint.amazonaws.com"
+  database: "mungcle"
+  username: "postgres"
+
+kafka:
+  enabled: false
+  bootstrapServers: "your-msk-endpoint:9092"
+
+# Larger resource budgets for production nodes
+services:
+  identity:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  petProfile:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  walks:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  social:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  notification:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  apiGateway:
+    replicas: 2
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+ingress:
+  enabled: true
+  className: alb                 # AWS Load Balancer Controller
+  host: api.mungcle.com          # replace with your domain
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-northeast-2:123456789012:certificate/REPLACE_ME"
+
+# Secrets should be injected via AWS Secrets Manager / External Secrets Operator
+# DO NOT commit real credentials here
+secrets:
+  postgresPassword: "REPLACE_WITH_AWS_SECRET"
+  jwtSecret: "REPLACE_WITH_AWS_SECRET"

@@ -59,7 +59,7 @@ class NotificationControllerTest {
         }
 
         mockMvc.perform(
-            get("/api/notifications")
+            get("/v1/notifications")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isOk)
@@ -74,7 +74,7 @@ class NotificationControllerTest {
         coEvery { notificationClient.markRead(300L, 10L) } returns Unit
 
         mockMvc.perform(
-            post("/api/notifications/300/read")
+            post("/v1/notifications/300/read")
                 .header("Authorization", "Bearer valid-token")
         )
             .andExpect(status().isNoContent)
@@ -82,7 +82,7 @@ class NotificationControllerTest {
 
     @Test
     fun `비인증 접근 — 401 반환`() {
-        mockMvc.perform(get("/api/notifications"))
+        mockMvc.perform(get("/v1/notifications"))
             .andExpect(status().isUnauthorized)
     }
 }

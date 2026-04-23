@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/blocks")
+@RequestMapping("/v1/blocks")
 class BlockController(private val identityClient: IdentityClient) {
 
     @PostMapping
