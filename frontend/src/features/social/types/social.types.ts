@@ -1,4 +1,4 @@
-export type GreetingStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+export type GreetingStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
 
 export interface GreetingResponse {
   id: number;
