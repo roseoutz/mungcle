@@ -8,10 +8,14 @@ global:
 
 # On EKS we use RDS/MSK instead of in-cluster infra
 postgres:
-  enabled: false   # use AWS RDS
+  enabled: false
+  host: "your-rds-endpoint.amazonaws.com"
+  database: "mungcle"
+  username: "postgres"
 
 kafka:
-  enabled: false   # use AWS MSK
+  enabled: false
+  bootstrapServers: "your-msk-endpoint:9092"
 
 # Larger resource budgets for production nodes
 services:

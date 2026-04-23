@@ -26,6 +26,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: mungcle-config
+            - configMapRef:
+                name: mungcle-config-db
           env:
             - name: DB_PASSWORD
               valueFrom:

@@ -8,6 +8,7 @@ global:
 postgres:
   enabled: true
   image: postgres:16-alpine
+  host: postgres
   port: 5432
   database: mungcle
   username: postgres
@@ -25,6 +26,7 @@ postgres:
 kafka:
   enabled: true
   image: apache/kafka:3.9.0
+  bootstrapServers: "kafka:9092"
   port: 9092
   controllerPort: 9093
   clusterId: mungcle-kafka-cluster-001
@@ -37,59 +39,8 @@ kafka:
       memory: "512Mi"
       cpu: "500m"
 
-# ─── Observability ───────────────────────────────────────────────────────────
-otelCollector:
-  enabled: true
-  image: otel/opentelemetry-collector-contrib:0.120.0
-  grpcPort: 4317
-  httpPort: 4318
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "250m"
-
-tempo:
-  enabled: true
-  image: grafana/tempo:2.7.2
-  port: 3200
-  storage: 2Gi
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "250m"
-
-prometheus:
-  enabled: true
-  image: prom/prometheus:v3.2.1
-  port: 9090
-  storage: 2Gi
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "250m"
-
-grafana:
-  enabled: true
-  image: grafana/grafana:11.5.2
-  port: 3000
-  storage: 1Gi
-  adminPassword: admin
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "250m"
+# 관측성 스택 (otel-collector, tempo, prometheus, grafana)은 docker-compose로 관리.
+# K8s 배포 시 별도 Helm chart (prometheus-stack, grafana 등) 사용 권장.
 
 # ─── Application Services ────────────────────────────────────────────────────
 services:
@@ -190,5 +141,6 @@ ingress:
 
 # ─── Secrets (override in production — do not commit real values) ─────────────
 secrets:
-  postgresPassword: postgres
-  jwtSecret: mungcle-dev-secret-key-change-in-production
+  # 실제 값은 --set 또는 values-secrets.yaml로 주입. 커밋 금지.
+  postgresPassword: ""
+  jwtSecret: ""
