@@ -4,9 +4,6 @@ server:
 spring:
   application:
     name: api-gateway
-  threads:
-    virtual:
-      enabled: true
 
 # gRPC client channels
 grpc:

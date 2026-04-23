@@ -2,13 +2,13 @@ package com.mungcle.gateway.infrastructure.security
 
 import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.support.WebDataBinderFactory
-import org.springframework.web.context.request.NativeWebRequest
-import org.springframework.web.method.support.HandlerMethodArgumentResolver
-import org.springframework.web.method.support.ModelAndViewContainer
+import org.springframework.web.reactive.BindingContext
+import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver
 import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.server.ServerWebExchange
+import reactor.core.publisher.Mono
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
@@ -22,11 +22,12 @@ class AuthUserArgumentResolver : HandlerMethodArgumentResolver {
 
     override fun resolveArgument(
         parameter: MethodParameter,
-        mavContainer: ModelAndViewContainer?,
-        webRequest: NativeWebRequest,
-        binderFactory: WebDataBinderFactory?,
-    ): Long {
-        val auth = SecurityContextHolder.getContext().authentication
-        return auth?.principal as? Long ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-    }
+        bindingContext: BindingContext,
+        exchange: ServerWebExchange,
+    ): Mono<Any> =
+        ReactiveSecurityContextHolder.getContext()
+            .map { ctx ->
+                ctx.authentication?.principal as? Long
+                    ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+            }
 }

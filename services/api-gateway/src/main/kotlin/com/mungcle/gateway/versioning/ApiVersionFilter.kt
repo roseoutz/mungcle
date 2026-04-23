@@ -1,28 +1,27 @@
 package com.mungcle.gateway.versioning
 
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
-import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
+import reactor.core.publisher.Mono
 
 @Component
-class ApiVersionFilter : OncePerRequestFilter() {
+@Order(Ordered.HIGHEST_PRECEDENCE)
+class ApiVersionFilter : WebFilter {
 
-    override fun doFilterInternal(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        filterChain: FilterChain,
-    ) {
-        val requestedVersion = request.getHeader(VERSION_HEADER)
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+        val requestedVersion = exchange.request.headers.getFirst(VERSION_HEADER)
         val resolved = if (requestedVersion != null) {
             ApiVersion.fromDate(requestedVersion)
         } else {
             ApiVersion.LATEST
         }
-        request.setAttribute(REQUEST_ATTR_KEY, resolved)
-        response.setHeader(VERSION_HEADER, resolved.date.toString())
-        filterChain.doFilter(request, response)
+        exchange.attributes[REQUEST_ATTR_KEY] = resolved
+        exchange.response.headers.set(VERSION_HEADER, resolved.date.toString())
+        return chain.filter(exchange)
     }
 
     companion object {

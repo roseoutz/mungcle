@@ -5,7 +5,6 @@ import com.mungcle.gateway.dto.NotificationsResponse
 import com.mungcle.gateway.infrastructure.grpc.NotificationClient
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import kotlinx.coroutines.runBlocking
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -24,13 +23,13 @@ class NotificationController(
     private val objectMapper = jacksonObjectMapper()
 
     @GetMapping
-    fun listNotifications(
+    suspend fun listNotifications(
         @AuthUser userId: Long,
         @RequestParam(required = false) cursor: Long?,
         @RequestParam(defaultValue = "20") limit: Int,
-    ): NotificationsResponse = runBlocking {
+    ): NotificationsResponse {
         val response = notificationClient.listNotifications(userId, cursor, limit)
-        NotificationsResponse(
+        return NotificationsResponse(
             notifications = response.notificationsList.map { notification ->
                 @Suppress("UNCHECKED_CAST")
                 val payload = objectMapper.readValue(notification.payloadJson, Map::class.java) as Map<String, Any>
@@ -49,13 +48,13 @@ class NotificationController(
 
     @PostMapping("/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun markRead(@AuthUser userId: Long, @PathVariable id: Long): Unit = runBlocking {
+    suspend fun markRead(@AuthUser userId: Long, @PathVariable id: Long) {
         notificationClient.markRead(notificationId = id, userId = userId)
     }
 
     @PostMapping("/read-all")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun markAllRead(@AuthUser userId: Long): Unit = runBlocking {
+    suspend fun markAllRead(@AuthUser userId: Long) {
         notificationClient.markAllRead(userId)
     }
 }

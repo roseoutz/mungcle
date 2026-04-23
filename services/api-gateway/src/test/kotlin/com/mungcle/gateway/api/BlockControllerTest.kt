@@ -1,7 +1,5 @@
 package com.mungcle.gateway.api
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.mungcle.gateway.config.SecurityConfig
 import com.mungcle.gateway.config.WebConfig
 import com.mungcle.gateway.dto.CreateBlockRequest
@@ -16,27 +14,20 @@ import io.mockk.coEvery
 import io.mockk.coJustRun
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(BlockController::class)
+@WebFluxTest(BlockController::class)
 @Import(SecurityConfig::class, WebConfig::class, JwtAuthenticationFilter::class, AuthUserArgumentResolver::class)
 class BlockControllerTest {
 
     @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var webTestClient: WebTestClient
 
     @MockkBean
     private lateinit var identityClient: IdentityClient
-
-    private val objectMapper = ObjectMapper().registerKotlinModule()
 
     private fun setupAuth(userId: Long = 1L) {
         val tokenResponse = validateTokenResponse {
@@ -52,13 +43,12 @@ class BlockControllerTest {
         coJustRun { identityClient.createBlock(any(), any()) }
         val req = CreateBlockRequest(blockedUserId = 99L)
 
-        mockMvc.perform(
-            post("/v1/blocks")
-                .header("Authorization", "Bearer valid-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req))
-        )
-            .andExpect(status().isCreated)
+        webTestClient.post().uri("/v1/blocks")
+            .header("Authorization", "Bearer valid-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(req)
+            .exchange()
+            .expectStatus().isCreated
     }
 
     @Test
@@ -73,13 +63,13 @@ class BlockControllerTest {
         }
         coEvery { identityClient.listBlocks(1L) } returns response
 
-        mockMvc.perform(
-            get("/v1/blocks")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].blockedUserId").value(99))
-            .andExpect(jsonPath("$[0].blockedNickname").value("blocked_user"))
+        webTestClient.get().uri("/v1/blocks")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$[0].blockedUserId").isEqualTo(99)
+            .jsonPath("$[0].blockedNickname").isEqualTo("blocked_user")
     }
 
     @Test
@@ -87,16 +77,16 @@ class BlockControllerTest {
         setupAuth()
         coJustRun { identityClient.deleteBlock(any(), any()) }
 
-        mockMvc.perform(
-            delete("/v1/blocks/99")
-                .header("Authorization", "Bearer valid-token")
-        )
-            .andExpect(status().isNoContent)
+        webTestClient.delete().uri("/v1/blocks/99")
+            .header("Authorization", "Bearer valid-token")
+            .exchange()
+            .expectStatus().isNoContent
     }
 
     @Test
     fun `비인증 차단 목록 조회 — 401 반환`() {
-        mockMvc.perform(get("/v1/blocks"))
-            .andExpect(status().isUnauthorized)
+        webTestClient.get().uri("/v1/blocks")
+            .exchange()
+            .expectStatus().isUnauthorized
     }
 }
