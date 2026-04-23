@@ -29,32 +29,11 @@ jwt:
   secret: ${JWT_SECRET:mungcle-dev-secret-key-change-in-production}
   expiration: 604800000 # 7 days
 
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
-    instances:
-      identity-service:
-        baseConfig: default
-      pet-profile-service:
-        baseConfig: default
-      walks-service:
-        baseConfig: default
-      social-service:
-        baseConfig: default
-      notification-service:
-        baseConfig: default
-
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics,circuitbreakers,circuitbreakerevents
+        include: health,info,prometheus,metrics,circuitbreakers,circuitbreakerevents,retries,retryevents,timelimiters,bulkheads
   health:
     circuitbreakers:
       enabled: true
@@ -80,7 +59,7 @@ gateway:
       limit: 20
       duration: 1m
 
-# Resilience4j Circuit Breaker 설정
+# Resilience4j Circuit Breaker + Retry + TimeLimiter 설정
 resilience4j:
   circuitbreaker:
     configs:
@@ -97,6 +76,65 @@ resilience4j:
           - io.grpc.StatusException
           - io.grpc.StatusRuntimeException
           - java.util.concurrent.TimeoutException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - io.grpc.StatusException
+          - io.grpc.StatusRuntimeException
+        ignoreExceptions:
+          - com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+        cancelRunningFuture: true
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
+  # 서비스별 동시 호출 수 제한 — 한 서비스의 과부하가 전체로 전파되지 않도록 격리
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: 25
+        maxWaitDuration: 500ms
     instances:
       identity-service:
         baseConfig: default
