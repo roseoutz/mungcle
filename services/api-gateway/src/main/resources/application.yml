@@ -33,7 +33,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,circuitbreakers,circuitbreakerevents
+  health:
+    circuitbreakers:
+      enabled: true
   metrics:
     distribution:
       percentiles-histogram:
@@ -45,3 +48,42 @@ management:
   otlp:
     tracing:
       endpoint: http://${OTEL_HOST:localhost}:4318/v1/traces
+
+# Rate Limiting 설정
+gateway:
+  rate-limit:
+    authenticated:
+      limit: 100
+      duration: 1m
+    anonymous:
+      limit: 20
+      duration: 1m
+
+# Resilience4j Circuit Breaker 설정
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slowCallDurationThreshold: 3s
+        slowCallRateThreshold: 80
+        recordExceptions:
+          - io.grpc.StatusException
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
