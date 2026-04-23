@@ -1,7 +1,9 @@
 package com.mungcle.gateway.infrastructure.exception
 
 import com.mungcle.gateway.infrastructure.grpc.GrpcStatusConverter
+import com.mungcle.gateway.infrastructure.resilience.ServiceUnavailableException
 import io.grpc.StatusException
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -27,6 +29,12 @@ class GlobalExceptionHandler {
             ErrorResponse(400, "VALIDATION_ERROR", fieldErrors)
         )
     }
+
+    @ExceptionHandler(ServiceUnavailableException::class)
+    fun handleServiceUnavailable(e: ServiceUnavailableException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .header("Retry-After", "10")
+            .body(ErrorResponse(503, "SERVICE_UNAVAILABLE", e.message ?: "Service temporarily unavailable"))
 }
 
 data class ErrorResponse(

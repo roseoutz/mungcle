@@ -5,6 +5,7 @@ import com.mungcle.gateway.dto.UserDetailResponse
 import com.mungcle.gateway.dto.UserResponse
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
 import com.mungcle.gateway.infrastructure.security.AuthUser
 import jakarta.validation.Valid
 import kotlinx.coroutines.async
@@ -21,12 +22,13 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(
     private val identityClient: IdentityClient,
     private val petProfileClient: PetProfileClient,
+    private val cb: CircuitBreakerWrapper,
 ) {
 
     @GetMapping("/me")
     suspend fun getMe(@AuthUser userId: Long): UserDetailResponse = coroutineScope {
-        val userDeferred = async { identityClient.getUser(userId) }
-        val dogsDeferred = async { petProfileClient.getDogsByOwner(userId) }
+        val userDeferred = async { cb.execute("identity-service") { identityClient.getUser(userId) } }
+        val dogsDeferred = async { cb.execute("pet-profile-service") { petProfileClient.getDogsByOwner(userId) } }
         val user = userDeferred.await()
         val dogs = dogsDeferred.await()
         UserDetailResponse(
@@ -43,12 +45,14 @@ class UserController(
         @AuthUser userId: Long,
         @Valid @RequestBody req: UpdateUserRequest,
     ): UserResponse {
-        val user = identityClient.updateUser(
-            userId = userId,
-            nickname = req.nickname,
-            neighborhood = req.neighborhood,
-            profilePhotoPath = req.profilePhotoPath,
-        )
+        val user = cb.execute("identity-service") {
+            identityClient.updateUser(
+                userId = userId,
+                nickname = req.nickname,
+                neighborhood = req.neighborhood,
+                profilePhotoPath = req.profilePhotoPath,
+            )
+        }
         return UserResponse(
             id = user.id,
             nickname = user.nickname,
@@ -59,6 +63,6 @@ class UserController(
 
     @DeleteMapping("/me")
     suspend fun deleteMe(@AuthUser userId: Long) {
-        identityClient.deleteUser(userId)
+        cb.execute("identity-service") { identityClient.deleteUser(userId) }
     }
 }

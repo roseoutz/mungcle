@@ -29,11 +29,35 @@ jwt:
   secret: ${JWT_SECRET:mungcle-dev-secret-key-change-in-production}
   expiration: 604800000 # 7 days
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        recordExceptions:
+          - io.grpc.StatusException
+          - io.grpc.StatusRuntimeException
+    instances:
+      identity-service:
+        baseConfig: default
+      pet-profile-service:
+        baseConfig: default
+      walks-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,circuitbreakers
   metrics:
     distribution:
       percentiles-histogram:
