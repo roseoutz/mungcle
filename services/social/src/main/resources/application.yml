@@ -59,18 +59,8 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
-        # 인증 서비스 — social 서비스의 모든 요청이 의존하므로 보수적 설정.
-        # 슬라이딩 윈도우를 넓혀 오탐(false positive) 감소.
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 10
-        failureRateThreshold: 30
-        waitDurationInOpenState: 30s
       walks-service:
         baseConfig: default
-        # 산책 서비스 — 실시간 위치/산책 데이터 조회 시 지연 허용 기준 완화.
-        # social 서비스 관점에서 walks 데이터는 집계/피드용으로 일부 지연 허용.
-        slowCallDurationThreshold: 5s
-        waitDurationInOpenState: 15s
 
 management:
   endpoints:
