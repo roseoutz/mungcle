@@ -57,6 +57,12 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
+        # 인증 서비스 — notification 서비스의 FCM 발송 전 토큰 검증에 사용.
+        # 보수적 설정으로 인증 실패 시 빠르게 CB 개방, 재시도 부하 방지.
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 30
+        waitDurationInOpenState: 30s
 
 management:
   endpoints:

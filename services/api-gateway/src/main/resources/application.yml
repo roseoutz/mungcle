@@ -79,14 +79,32 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
+        # 인증 서비스 — 가장 중요한 서비스이므로 보수적으로 설정.
+        # 더 많은 샘플을 수집한 뒤 CB를 열고, 실패율 임계값도 낮게 유지해 빠르게 감지.
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 30
+        waitDurationInOpenState: 30s
       pet-profile-service:
         baseConfig: default
+        # 프로필 조회 — 읽기 위주의 단순 조회라 기본값으로 충분.
       walks-service:
         baseConfig: default
+        # 산책 서비스 — 실시간성이 중요하므로 느린 호출 기준을 엄격하게 설정해 빠른 실패 유도.
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 70
       social-service:
         baseConfig: default
+        # 소셜 서비스 — 피드/팔로우 등 일부 집계 연산이 있어 응답 지연을 더 허용.
+        # CB 열림 시 빠르게 half-open으로 전환해 복구 속도 향상.
+        slowCallDurationThreshold: 5s
+        waitDurationInOpenState: 15s
       notification-service:
         baseConfig: default
+        # 알림 서비스 — 비필수 기능이므로 관대한 실패율로 불필요한 CB 개방 억제.
+        # CB가 열려도 짧은 대기 후 빠르게 재시도.
+        failureRateThreshold: 70
+        waitDurationInOpenState: 5s
 
   retry:
     configs:
@@ -103,6 +121,8 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
+        # 인증 서비스 — 재시도를 줄여 빠른 실패(fail-fast)로 응답 지연 최소화.
+        maxAttempts: 2
       pet-profile-service:
         baseConfig: default
       walks-service:
@@ -111,6 +131,9 @@ resilience4j:
         baseConfig: default
       notification-service:
         baseConfig: default
+        # 알림 서비스 — 비동기 특성상 재시도를 충분히 허용해 전달 신뢰성 향상.
+        maxAttempts: 5
+        waitDuration: 1s
 
   timelimiter:
     configs:
@@ -138,6 +161,8 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
+        # 인증 서비스 — 모든 요청이 거치므로 높은 동시성 허용.
+        maxConcurrentCalls: 50
       pet-profile-service:
         baseConfig: default
       walks-service:
@@ -146,3 +171,5 @@ resilience4j:
         baseConfig: default
       notification-service:
         baseConfig: default
+        # 알림 서비스 — 비필수 기능이므로 동시성을 낮게 제한해 다른 서비스 자원 보호.
+        maxConcurrentCalls: 10

@@ -56,6 +56,12 @@ resilience4j:
     instances:
       identity-service:
         baseConfig: default
+        # 인증 서비스 — walks 서비스의 모든 요청이 의존하므로 보수적 설정.
+        # 슬라이딩 윈도우를 넓혀 오탐(false positive) 감소.
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 30
+        waitDurationInOpenState: 30s
 
 management:
   endpoints:
