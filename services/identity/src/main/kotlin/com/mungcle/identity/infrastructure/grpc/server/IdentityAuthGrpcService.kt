@@ -46,6 +46,7 @@ import com.mungcle.proto.identity.v1.UpdatePushTokenResponse
 import com.mungcle.proto.identity.v1.UpdateUserRequest
 import com.mungcle.proto.identity.v1.UserInfo
 import com.mungcle.proto.identity.v1.ValidateTokenRequest
+import com.mungcle.proto.identity.v1.SocialProvider as ProtoSocialProvider
 import com.mungcle.proto.identity.v1.ValidateTokenResponse
 import com.mungcle.proto.identity.v1.authResponse
 import com.mungcle.proto.identity.v1.blockInfo
@@ -94,10 +95,10 @@ class IdentityAuthGrpcService(
 
     override suspend fun authenticateSocial(request: AuthenticateSocialRequest): AuthResponse {
         val provider = when (request.provider) {
-            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_KAKAO -> SocialProvider.KAKAO
-            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_NAVER -> SocialProvider.NAVER
-            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_APPLE -> SocialProvider.APPLE
-            com.mungcle.proto.identity.v1.SocialProvider.SOCIAL_PROVIDER_GOOGLE -> SocialProvider.GOOGLE
+            ProtoSocialProvider.SOCIAL_PROVIDER_KAKAO -> SocialProvider.KAKAO
+            ProtoSocialProvider.SOCIAL_PROVIDER_NAVER -> SocialProvider.NAVER
+            ProtoSocialProvider.SOCIAL_PROVIDER_APPLE -> SocialProvider.APPLE
+            ProtoSocialProvider.SOCIAL_PROVIDER_GOOGLE -> SocialProvider.GOOGLE
             else -> throw StatusException(Status.INVALID_ARGUMENT.withDescription("지원하지 않는 소셜 로그인 프로바이더입니다"))
         }
         val result = authenticateSocialUseCase.execute(
