@@ -14,6 +14,7 @@ import com.mungcle.petprofile.domain.port.`in`.UpdateDogUseCase
 import com.mungcle.proto.petprofile.v1.CreateDogRequest
 import com.mungcle.proto.petprofile.v1.DeleteDogRequest
 import com.mungcle.proto.petprofile.v1.DeleteDogResponse
+import com.mungcle.proto.petprofile.v1.DogSize as ProtoDogSize
 import com.mungcle.proto.petprofile.v1.DogInfo
 import com.mungcle.proto.petprofile.v1.GetDogRequest
 import com.mungcle.proto.petprofile.v1.GetDogsByIdsRequest
@@ -131,16 +132,16 @@ class PetProfileGrpcService(
         vaccinationRegistered = this@toDogInfo.isVaccinationRegistered()
     }
 
-    private fun mapDogSize(protoSize: com.mungcle.proto.petprofile.v1.DogSize): DogSize = when (protoSize) {
-        com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_SMALL -> DogSize.SMALL
-        com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_MEDIUM -> DogSize.MEDIUM
-        com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_LARGE -> DogSize.LARGE
+    private fun mapDogSize(protoSize: ProtoDogSize): DogSize = when (protoSize) {
+        ProtoDogSize.DOG_SIZE_SMALL -> DogSize.SMALL
+        ProtoDogSize.DOG_SIZE_MEDIUM -> DogSize.MEDIUM
+        ProtoDogSize.DOG_SIZE_LARGE -> DogSize.LARGE
         else -> throw IllegalArgumentException("유효하지 않은 반려견 크기입니다: $protoSize")
     }
 
-    private fun mapDogSizeToProto(size: DogSize): com.mungcle.proto.petprofile.v1.DogSize = when (size) {
-        DogSize.SMALL -> com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_SMALL
-        DogSize.MEDIUM -> com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_MEDIUM
-        DogSize.LARGE -> com.mungcle.proto.petprofile.v1.DogSize.DOG_SIZE_LARGE
+    private fun mapDogSizeToProto(size: DogSize): ProtoDogSize = when (size) {
+        DogSize.SMALL -> ProtoDogSize.DOG_SIZE_SMALL
+        DogSize.MEDIUM -> ProtoDogSize.DOG_SIZE_MEDIUM
+        DogSize.LARGE -> ProtoDogSize.DOG_SIZE_LARGE
     }
 }

@@ -21,6 +21,8 @@ import com.mungcle.proto.walks.v1.GetWalkRequest
 import com.mungcle.proto.walks.v1.StartWalkRequest
 import com.mungcle.proto.walks.v1.StopWalkRequest
 import com.mungcle.proto.walks.v1.WalkInfo
+import com.mungcle.proto.walks.v1.WalkStatus as ProtoWalkStatus
+import com.mungcle.proto.walks.v1.WalkType as ProtoWalkType
 import com.mungcle.proto.walks.v1.WalksServiceGrpcKt
 import com.mungcle.proto.walks.v1.getMyActiveWalksResponse
 import com.mungcle.proto.walks.v1.getNearbyPatternsResponse
@@ -30,6 +32,7 @@ import com.mungcle.proto.walks.v1.nearbyWalkInfo
 import com.mungcle.proto.walks.v1.walkInfo
 import com.mungcle.proto.walks.v1.walkPatternInfo
 import com.mungcle.walks.domain.model.Walk
+import com.mungcle.walks.domain.model.WalkStatus
 import io.grpc.Status
 import io.grpc.StatusException
 import net.devh.boot.grpc.server.service.GrpcService
@@ -47,8 +50,8 @@ class WalksGrpcService(
 
     override suspend fun startWalk(request: StartWalkRequest): WalkInfo {
         val walkType = when (request.type) {
-            com.mungcle.proto.walks.v1.WalkType.WALK_TYPE_OPEN -> WalkType.OPEN
-            com.mungcle.proto.walks.v1.WalkType.WALK_TYPE_SOLO -> WalkType.SOLO
+            ProtoWalkType.WALK_TYPE_OPEN -> WalkType.OPEN
+            ProtoWalkType.WALK_TYPE_SOLO -> WalkType.SOLO
             else -> throw StatusException(
                 Status.INVALID_ARGUMENT.withDescription("유효하지 않은 산책 타입입니다")
             )
@@ -163,13 +166,13 @@ class WalksGrpcService(
         dogId = this@toWalkInfo.dogId
         userId = this@toWalkInfo.userId
         type = when (this@toWalkInfo.type) {
-            WalkType.OPEN -> com.mungcle.proto.walks.v1.WalkType.WALK_TYPE_OPEN
-            WalkType.SOLO -> com.mungcle.proto.walks.v1.WalkType.WALK_TYPE_SOLO
+            WalkType.OPEN -> ProtoWalkType.WALK_TYPE_OPEN
+            WalkType.SOLO -> ProtoWalkType.WALK_TYPE_SOLO
         }
         gridCell = this@toWalkInfo.gridCell.value
         status = when (this@toWalkInfo.status) {
-            com.mungcle.walks.domain.model.WalkStatus.ACTIVE -> com.mungcle.proto.walks.v1.WalkStatus.WALK_STATUS_ACTIVE
-            com.mungcle.walks.domain.model.WalkStatus.ENDED -> com.mungcle.proto.walks.v1.WalkStatus.WALK_STATUS_ENDED
+            WalkStatus.ACTIVE -> ProtoWalkStatus.WALK_STATUS_ACTIVE
+            WalkStatus.ENDED -> ProtoWalkStatus.WALK_STATUS_ENDED
         }
         startedAt = this@toWalkInfo.startedAt.epochSecond
         endsAt = this@toWalkInfo.endsAt.epochSecond
