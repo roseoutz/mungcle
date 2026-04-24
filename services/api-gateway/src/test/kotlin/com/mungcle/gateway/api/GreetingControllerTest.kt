@@ -6,6 +6,8 @@ import com.mungcle.gateway.dto.CreateGreetingRequest
 import com.mungcle.gateway.dto.RespondGreetingRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.SocialClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
+import com.mungcle.gateway.infrastructure.resilience.FallbackResult
 import com.mungcle.gateway.infrastructure.security.AuthUserArgumentResolver
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import com.mungcle.proto.identity.v1.validateTokenResponse
@@ -13,6 +15,7 @@ import com.mungcle.proto.social.v1.GreetingStatus
 import com.mungcle.proto.social.v1.greetingInfo
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
@@ -32,6 +35,17 @@ class GreetingControllerTest {
 
     @MockkBean
     private lateinit var identityClient: IdentityClient
+
+    @MockkBean
+    private lateinit var cb: CircuitBreakerWrapper
+
+    @BeforeEach
+    fun setupCb() {
+        coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        coEvery { cb.executeWithFallback(any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            FallbackResult(thirdArg<suspend () -> Any?>()(), isFallback = false)
+        }
+    }
 
     private val fakeGreeting = greetingInfo {
         id = 200L

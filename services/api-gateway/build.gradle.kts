@@ -5,10 +5,19 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+// Resilience4j BOM — Spring Boot 3.5 호환 버전
+extra["resilience4jVersion"] = "2.3.0"
+
 dependencies {
     implementation(project(":common:domain-common"))
     implementation(project(":common:kafka-common"))
     implementation(project(":common:grpc-client"))
+
+    // Resilience4j Circuit Breaker
+    implementation(platform("io.github.resilience4j:resilience4j-bom:${property("resilience4jVersion")}"))
+    implementation("io.github.resilience4j:resilience4j-spring-boot3")
+    implementation("io.github.resilience4j:resilience4j-reactor")
+    implementation("io.github.resilience4j:resilience4j-kotlin")
 
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -27,6 +36,11 @@ dependencies {
     implementation("io.grpc:grpc-protobuf:${property("grpcVersion")}")
     implementation("com.google.protobuf:protobuf-kotlin:${property("protobufVersion")}")
 
+    // Resilience4j Circuit Breaker
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-reactor:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-kotlin:2.2.0")
+
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
@@ -40,8 +54,10 @@ dependencies {
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("io.mockk:mockk:${property("mockkVersion")}")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
 }

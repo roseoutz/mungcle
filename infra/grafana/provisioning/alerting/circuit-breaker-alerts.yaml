@@ -1,0 +1,123 @@
+apiVersion: 1
+
+# Circuit Breaker 알림 규칙 — Resilience4j CB 상태 전환, 실패율, P99 지연 임계치 초과 시 알림
+groups:
+  - orgId: 1
+    name: circuit-breaker
+    folder: Mungcle Alerts
+    interval: 1m
+    rules:
+
+      # CB가 OPEN 상태로 전환될 때 즉시 알림
+      - uid: cb-state-open
+        title: Circuit Breaker OPEN 상태 전환
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 120, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: max(resilience4j_circuitbreaker_state{state="open"}) by (name)
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 120, to: 0 }
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              refId: C
+              type: threshold
+        dashboardUid: mungcle-circuit-breaker
+        panelId: 1
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: "Circuit Breaker {{ $labels.name }} 가 OPEN 상태로 전환됨"
+          description: "api-gateway 의 {{ $labels.name }} circuit breaker 가 OPEN 상태입니다. 즉시 확인이 필요합니다."
+        labels:
+          severity: critical
+          team: backend
+
+      # 실패율이 2분 이상 50%를 초과할 때 알림
+      - uid: cb-failure-rate-high
+        title: Circuit Breaker 실패율 50% 초과
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: resilience4j_circuitbreaker_failure_rate
+              instant: false
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: { params: [50], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              refId: C
+              type: threshold
+        dashboardUid: mungcle-circuit-breaker
+        panelId: 2
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "Circuit Breaker {{ $labels.name }} 실패율 {{ $values.A }}% 초과"
+          description: "{{ $labels.name }} circuit breaker 의 실패율이 2분 이상 50%를 초과하고 있습니다."
+        labels:
+          severity: warning
+          team: backend
+
+      # P99 지연이 5분 이상 3초를 초과할 때 알림
+      - uid: cb-p99-latency-high
+        title: Circuit Breaker P99 지연 3초 초과
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: histogram_quantile(0.99, sum(rate(resilience4j_circuitbreaker_calls_seconds_bucket[5m])) by (name, le))
+              instant: false
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: { params: [3], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              refId: C
+              type: threshold
+        dashboardUid: mungcle-circuit-breaker
+        panelId: 6
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Circuit Breaker {{ $labels.name }} P99 지연 {{ $values.A }}s 초과"
+          description: "{{ $labels.name }} circuit breaker 의 P99 지연이 5분 이상 3초를 초과하고 있습니다."
+        labels:
+          severity: warning
+          team: backend

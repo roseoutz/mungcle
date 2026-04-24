@@ -6,6 +6,8 @@ import com.mungcle.gateway.dto.StartWalkRequest
 import com.mungcle.gateway.infrastructure.grpc.IdentityClient
 import com.mungcle.gateway.infrastructure.grpc.PetProfileClient
 import com.mungcle.gateway.infrastructure.grpc.WalksClient
+import com.mungcle.gateway.infrastructure.resilience.CircuitBreakerWrapper
+import com.mungcle.gateway.infrastructure.resilience.FallbackResult
 import com.mungcle.gateway.infrastructure.security.AuthUserArgumentResolver
 import com.mungcle.gateway.infrastructure.security.JwtAuthenticationFilter
 import com.mungcle.proto.identity.v1.userInfo
@@ -18,6 +20,7 @@ import com.mungcle.proto.walks.v1.nearbyWalkInfo
 import com.mungcle.proto.walks.v1.walkInfo
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
@@ -40,6 +43,17 @@ class WalkControllerTest {
 
     @MockkBean
     private lateinit var petProfileClient: PetProfileClient
+
+    @MockkBean
+    private lateinit var cb: CircuitBreakerWrapper
+
+    @BeforeEach
+    fun setupCb() {
+        coEvery { cb.execute(any(), any<suspend () -> Any?>()) } coAnswers { secondArg<suspend () -> Any?>()() }
+        coEvery { cb.executeWithFallback(any(), any(), any<suspend () -> Any?>()) } coAnswers {
+            FallbackResult(thirdArg<suspend () -> Any?>()(), isFallback = false)
+        }
+    }
 
     private val fakeWalkInfo = walkInfo {
         id = 100L

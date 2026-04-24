@@ -13,6 +13,7 @@ import com.mungcle.proto.notification.v1.MarkAllReadResponse
 import com.mungcle.proto.notification.v1.MarkReadRequest
 import com.mungcle.proto.notification.v1.MarkReadResponse
 import com.mungcle.proto.notification.v1.NotificationInfo
+import com.mungcle.proto.notification.v1.NotificationType as ProtoNotificationType
 import com.mungcle.proto.notification.v1.NotificationServiceGrpcKt
 import com.mungcle.proto.notification.v1.listNotificationsResponse
 import com.mungcle.proto.notification.v1.notificationInfo
@@ -75,10 +76,10 @@ class NotificationGrpcService(
         createdAt = this@toProto.createdAt.epochSecond
     }
 
-    private fun NotificationType.toProto(): com.mungcle.proto.notification.v1.NotificationType = when (this) {
-        NotificationType.GREETING_RECEIVED -> com.mungcle.proto.notification.v1.NotificationType.NOTIFICATION_TYPE_GREETING_RECEIVED
-        NotificationType.GREETING_ACCEPTED -> com.mungcle.proto.notification.v1.NotificationType.NOTIFICATION_TYPE_GREETING_ACCEPTED
-        NotificationType.MESSAGE_RECEIVED -> com.mungcle.proto.notification.v1.NotificationType.NOTIFICATION_TYPE_MESSAGE_RECEIVED
-        NotificationType.WALK_EXPIRED -> com.mungcle.proto.notification.v1.NotificationType.NOTIFICATION_TYPE_WALK_EXPIRED
+    private fun NotificationType.toProto(): ProtoNotificationType = when (this) {
+        NotificationType.GREETING_RECEIVED -> ProtoNotificationType.NOTIFICATION_TYPE_GREETING_RECEIVED
+        NotificationType.GREETING_ACCEPTED -> ProtoNotificationType.NOTIFICATION_TYPE_GREETING_ACCEPTED
+        NotificationType.MESSAGE_RECEIVED -> ProtoNotificationType.NOTIFICATION_TYPE_MESSAGE_RECEIVED
+        NotificationType.WALK_EXPIRED -> ProtoNotificationType.NOTIFICATION_TYPE_WALK_EXPIRED
     }
 }

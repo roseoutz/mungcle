@@ -18,15 +18,16 @@ export function EmptyState({ icon, message, ctaLabel, onCta }: EmptyStateProps) 
       {icon ? <Text style={styles.icon}>{icon}</Text> : null}
       <Text style={styles.message}>{message}</Text>
       {ctaLabel && onCta ? (
-        <Button
-          variant="outline"
-          size="md"
-          onPress={onCta}
-          accessibilityLabel={ctaLabel}
-          style={styles.cta}
-        >
-          {ctaLabel}
-        </Button>
+        <View style={styles.cta}>
+          <Button
+            variant="outline"
+            size="md"
+            onPress={onCta}
+            accessibilityLabel={ctaLabel}
+          >
+            {ctaLabel}
+          </Button>
+        </View>
       ) : null}
     </View>
   );
