@@ -108,6 +108,7 @@ mungcle/
 
 ## 문서
 
+- **[Getting Started](docs/getting-started.md)** - 로컬 개발 환경 구성 및 실행 가이드
 - 설계/기능: `plan-docs/`
 - 코딩 규칙: `ai/`
 - 아키텍처 결정: `ai/decisions.md`
