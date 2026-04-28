@@ -16,6 +16,7 @@ service IdentityService {
   rpc LoginEmail(LoginEmailRequest) returns (AuthResponse);
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
   rpc UpdatePushToken(UpdatePushTokenRequest) returns (UpdatePushTokenResponse);
+  rpc GetPushToken(GetPushTokenRequest) returns (GetPushTokenResponse);
 
   rpc GetUser(GetUserRequest) returns (UserInfo);
   rpc GetUsersByIds(GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
@@ -80,6 +81,14 @@ message UpdatePushTokenRequest {
 }
 
 message UpdatePushTokenResponse {}
+
+message GetPushTokenRequest {
+  int64 user_id = 1;
+}
+
+message GetPushTokenResponse {
+  string push_token = 1;
+}
 
 // --- User ---
 message GetUserRequest {
