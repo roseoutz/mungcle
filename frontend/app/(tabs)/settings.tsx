@@ -13,6 +13,7 @@ import { useAuth } from '../../src/features/auth';
 import { deleteAccount } from '../../src/features/settings';
 import { colors, spacing, borderRadius, touchTarget } from '../../src/constants/theme';
 import { typography } from '../../src/constants/typography';
+import { ResponsiveContainer } from '../../src/shared/components/ResponsiveContainer';
 
 interface MenuItemProps {
   label: string;
@@ -62,6 +63,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <ResponsiveContainer maxWidth={640}>
       <View style={styles.content}>
         <Text style={styles.title}>설정</Text>
 
@@ -117,6 +119,7 @@ export default function SettingsScreen() {
           />
         </View>
       </View>
+      </ResponsiveContainer>
 
       {/* 회원 탈퇴 확인 모달 */}
       <Modal
