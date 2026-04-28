@@ -9,6 +9,7 @@ import type { Dog } from '../../src/features/dogs/types/dogs.types';
 import { getMyDogs } from '../../src/features/dogs';
 import { useApi } from '../../src/shared/hooks/useApi';
 import { EmptyState } from '../../src/shared/components/EmptyState';
+import { ResponsiveContainer } from '../../src/shared/components/ResponsiveContainer';
 
 const MAX_DOGS = 5;
 
@@ -98,23 +99,25 @@ export default function DogsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <FlatList
-        data={dogList}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
-        ListEmptyComponent={
-          <EmptyState
-            icon="🐶"
-            message="등록된 강아지가 없어요."
-            ctaLabel="강아지 추가하기"
-            onCta={handleAdd}
-          />
-        }
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      <ResponsiveContainer>
+        <FlatList
+          data={dogList}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ListHeaderComponent={ListHeader}
+          ListFooterComponent={ListFooter}
+          ListEmptyComponent={
+            <EmptyState
+              icon="🐶"
+              message="등록된 강아지가 없어요."
+              ctaLabel="강아지 추가하기"
+              onCta={handleAdd}
+            />
+          }
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../src/constants/theme';
+import { useResponsive } from '../../src/shared/hooks/useResponsive';
+import { WebSidebar } from '../../src/shared/components/WebSidebar';
 
 function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
   return (
@@ -10,17 +12,22 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 }
 
 export default function TabsLayout() {
-  return (
+  const { showSidebar } = useResponsive();
+
+  const tabs = (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
+        tabBarStyle: showSidebar
+          ? { display: 'none' }
+          : {
+              backgroundColor: colors.surface,
+              borderTopColor: colors.border,
+            },
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
+        headerShown: !showSidebar,
       }}
     >
       <Tabs.Screen
@@ -53,4 +60,23 @@ export default function TabsLayout() {
       />
     </Tabs>
   );
+
+  if (!showSidebar) return tabs;
+
+  return (
+    <View style={styles.webLayout}>
+      <WebSidebar />
+      <View style={styles.webContent}>{tabs}</View>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  webLayout: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  webContent: {
+    flex: 1,
+  },
+});

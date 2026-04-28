@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../src/constants/theme';
 import { typography } from '../../src/constants/typography';
 import { NotificationList, useNotifications } from '../../src/features/notifications';
+import { ResponsiveContainer } from '../../src/shared/components/ResponsiveContainer';
 
 export default function NotificationsScreen() {
   const {
@@ -23,26 +24,28 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>알림</Text>
-        <TouchableOpacity
-          style={styles.markAllButton}
-          onPress={handleMarkAllRead}
-          accessibilityLabel="모두 읽음 처리"
-          accessibilityRole="button"
-        >
-          <Text style={styles.markAllText}>모두 읽음</Text>
-        </TouchableOpacity>
-      </View>
-      <NotificationList
-        notifications={notifications}
-        loading={loading}
-        error={error ? error.message : null}
-        hasMore={hasMore}
-        onRefresh={refresh}
-        onLoadMore={loadMore}
-        onMarkRead={handleMarkRead}
-      />
+      <ResponsiveContainer maxWidth={720}>
+        <View style={styles.header}>
+          <Text style={styles.title}>알림</Text>
+          <TouchableOpacity
+            style={styles.markAllButton}
+            onPress={handleMarkAllRead}
+            accessibilityLabel="모두 읽음 처리"
+            accessibilityRole="button"
+          >
+            <Text style={styles.markAllText}>모두 읽음</Text>
+          </TouchableOpacity>
+        </View>
+        <NotificationList
+          notifications={notifications}
+          loading={loading}
+          error={error ? error.message : null}
+          hasMore={hasMore}
+          onRefresh={refresh}
+          onLoadMore={loadMore}
+          onMarkRead={handleMarkRead}
+        />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

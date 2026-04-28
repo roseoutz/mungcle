@@ -13,6 +13,8 @@ import { TimePatternCard } from '../../src/features/walks/components/TimePattern
 import { WalkToggle } from '../../src/features/walks/components/WalkToggle';
 import { useNearbyWalks } from '../../src/features/walks/hooks/useNearbyWalks';
 import { EmptyState } from '../../src/shared/components/EmptyState';
+import { ResponsiveContainer } from '../../src/shared/components/ResponsiveContainer';
+import { useResponsive } from '../../src/shared/hooks/useResponsive';
 import type { NearbyWalkCard } from '../../src/features/walks/types/walks.types';
 
 // 스켈레톤 카드 — 로딩 대체 UI
@@ -152,15 +154,18 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <FlatList
-        data={walks}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={ListEmpty}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      <ResponsiveContainer>
+        <FlatList
+          data={walks}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ListHeaderComponent={ListHeader}
+          ListEmptyComponent={ListEmpty}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          numColumns={1}
+        />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
