@@ -11,11 +11,13 @@ import kotlin.test.assertTrue
 
 class WalkExpirySchedulerTest {
 
-    private val expireWalksUseCase: ExpireWalksUseCase = mockk(relaxed = true)
+    private val expireWalksUseCase: ExpireWalksUseCase = mockk()
     private val scheduler = WalkExpiryScheduler(expireWalksUseCase)
 
     @Test
     fun `expireWalks 호출 시 UseCase execute가 1회 실행`() {
+        every { expireWalksUseCase.execute(any()) } returns 0
+
         scheduler.expireWalks()
 
         verify(exactly = 1) { expireWalksUseCase.execute(any()) }
@@ -37,10 +39,22 @@ class WalkExpirySchedulerTest {
 
     @Test
     fun `expireWalks 반복 호출 시 매번 UseCase execute 실행`() {
+        every { expireWalksUseCase.execute(any()) } returns 0
+
         scheduler.expireWalks()
         scheduler.expireWalks()
         scheduler.expireWalks()
 
         verify(exactly = 3) { expireWalksUseCase.execute(any()) }
+    }
+
+    @Test
+    fun `UseCase에서 예외 발생 시 스케줄러가 예외를 삼키고 다음 호출도 정상 실행`() {
+        every { expireWalksUseCase.execute(any()) } throws RuntimeException("DB 연결 오류") andThen 0
+
+        scheduler.expireWalks()
+        scheduler.expireWalks()
+
+        verify(exactly = 2) { expireWalksUseCase.execute(any()) }
     }
 }
