@@ -42,6 +42,9 @@ grpc:
 tsid:
   node: ${TSID_NODE:6}
 
+fcm:
+  service-account-key: ${FCM_SERVICE_ACCOUNT_KEY:}
+
 resilience4j:
   circuitbreaker:
     configs:
